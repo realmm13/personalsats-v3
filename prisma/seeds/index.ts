@@ -1,6 +1,6 @@
 // @ts-check
 
-import { PrismaClient } from "@/generated/prisma";
+import { PrismaClient } from "@prisma/client";
 // Remove auth import if not needed elsewhere
 // import { auth } from "@/server/auth"; 
 import bcrypt from "bcrypt"; // Import bcrypt

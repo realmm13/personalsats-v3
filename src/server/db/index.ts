@@ -21,4 +21,4 @@ if (IS_DEV) globalForPrisma.prisma = prisma;
 
 export const db = prisma;
 
-export * from "@/generated/prisma";
+export * from "@prisma/client";
