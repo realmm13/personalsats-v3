@@ -1,0 +1,2 @@
+# ignore Prisma's generated types
+# src/generated/prisma/** 

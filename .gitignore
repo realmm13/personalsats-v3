@@ -23,8 +23,6 @@ yarn-error.log*
 .idea
 .content-collections
 .content-collections/generated/index.js
-src/generated/prisma/
-.contentlayer/
 
 # Misc
 .DS_Store
