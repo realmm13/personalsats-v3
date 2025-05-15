@@ -1,16 +1,44 @@
-import { allPosts, type Post } from "contentlayer/generated"; // Import from the standard Contentlayer generated path
+import fs from 'fs';
+import path from 'path';
+import matter from 'gray-matter';
 
-export type { Post };
+// This file uses fs+gray-matter to load MDX posts. Contentlayer is not used here.
+
+export interface Post {
+  _meta: { path: string };
+  title: string;
+  description?: string;
+  date: string;
+  published: boolean;
+  tags?: string[];
+  image?: string;
+  mdx?: string;
+}
+
+const postsDir = path.join(process.cwd(), 'posts');
 
 export function getAllPosts(): Post[] {
-  return allPosts
-    .filter((post: Post) => post.published)
-    .sort(
-      (a: Post, b: Post) =>
-        new Date(b.date).getTime() - new Date(a.date).getTime(),
-    );
+  return fs
+    .readdirSync(postsDir)
+    .filter((file) => file.endsWith('.mdx'))
+    .map((fileName) => {
+      const source = fs.readFileSync(path.join(postsDir, fileName), 'utf8');
+      const { data, content } = matter(source);
+      return {
+        _meta: { path: `/posts/${fileName.replace(/\.mdx?$/, '')}` },
+        title: data.title,
+        description: data.description,
+        date: data.date,
+        published: data.published,
+        tags: data.tags,
+        image: data.image,
+        mdx: content,
+      };
+    })
+    .filter((post) => post.published)
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
 export function getPostBySlug(slug: string): Post | undefined {
-  return allPosts.find((post: Post) => post._meta.path === slug);
+  return getAllPosts().find((post) => post._meta.path === slug);
 }
