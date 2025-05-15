@@ -1,13 +1,14 @@
 "use client";
 
-import { Card } from "@/components/ui/card";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PortfolioLineChart from "./_components/PortfolioLineChart";
 import TransactionList from "./_components/TransactionList";
 import { Spinner } from "@/components/Spinner";
 import { Badge } from "@/components/ui/badge";
-import { BarChart3, Users, CreditCard, Clock } from "lucide-react";
+import { BarChart3, Users, CreditCard, Clock, PlusIcon, Upload, ReceiptText } from "lucide-react";
+import Link from "next/link";
 
 interface Stats {
   totalValue: number;
@@ -28,6 +29,8 @@ interface HistoryPoint {
 }
 
 export default function AppPage() {
+  console.log("🔥 Rendering src/app/(app)/page.tsx 🔥"); // Canary console log
+
   const [stats, setStats] = useState<Stats | null>(null);
   const [history, setHistory] = useState<HistoryPoint[]>([]);
   const [trades, setTrades] = useState<Trade[]>([]);
@@ -81,28 +84,28 @@ export default function AppPage() {
 
   const cards = [
     {
-      title: "Total Revenue",
+      title: "Total Revenue", // Note: These titles seem like placeholders, update if needed
       value: `$${stats.totalValue.toLocaleString()}`,
       delta: "+20.1%",
       subtitle: "Compared to last month",
       icon: <BarChart3 className="h-4 w-4 text-muted-foreground" />,
     },
     {
-      title: "Subscriptions",
+      title: "Subscriptions", // Placeholder
       value: "+2,350",
       delta: "+10.5%",
       subtitle: "New subscribers this week",
       icon: <Users className="h-4 w-4 text-muted-foreground" />,
     },
     {
-      title: "Sales",
+      title: "Sales", // Placeholder
       value: "+12,234",
       delta: "+15.3%",
       subtitle: "Total sales this month",
       icon: <CreditCard className="h-4 w-4 text-muted-foreground" />,
     },
     {
-      title: "Active Users",
+      title: "Active Users", // Placeholder
       value: "+573",
       delta: "+5.2%",
       subtitle: "Currently active users",
@@ -112,6 +115,8 @@ export default function AppPage() {
 
   return (
     <div className="vertical space-y-8">
+      {/* Canary Banner */}
+      {/* Remove any AppHeader, Logo, or global header/sidebar here */}
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -151,6 +156,51 @@ export default function AppPage() {
           </Card>
         ))}
       </div>
+
+      {/* Quick Actions */}
+      <section>
+        <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 w-full">
+          {/* New Transaction Card */}
+          <Link href="/transactions/new" className="block hover:bg-muted/50 transition-colors rounded-lg">
+            <Card className="cursor-pointer h-full">
+              <CardHeader className="items-center text-center gap-2">
+                <div className="p-3 rounded-full bg-primary/10 text-primary">
+                  <PlusIcon className="w-6 h-6" />
+                </div>
+                <CardTitle>New Transaction</CardTitle>
+                <CardDescription>Manually add a buy or sell</CardDescription>
+              </CardHeader>
+            </Card>
+            </Link>
+
+          {/* Import Transactions Card */}
+          <Link href="/transactions/import" className="block hover:bg-muted/50 transition-colors rounded-lg">
+            <Card className="cursor-pointer h-full">
+              <CardHeader className="items-center text-center gap-2">
+                 <div className="p-3 rounded-full bg-primary/10 text-primary">
+                   <Upload className="w-6 h-6" />
+                 </div>
+                <CardTitle>Import Transactions</CardTitle>
+                <CardDescription>Upload from CSV file</CardDescription>
+              </CardHeader>
+            </Card>
+            </Link>
+
+          {/* Tax Ledger Card */}
+          <Link href="/tax" className="block hover:bg-muted/50 transition-colors rounded-lg">
+            <Card className="cursor-pointer h-full">
+              <CardHeader className="items-center text-center gap-2">
+                 <div className="p-3 rounded-full bg-primary/10 text-primary">
+                   <ReceiptText className="h-6 w-6" />
+                 </div>
+                <CardTitle>Tax Ledger</CardTitle>
+                <CardDescription>View capital gains & losses</CardDescription>
+              </CardHeader>
+            </Card>
+            </Link>
+        </div>
+      </section>
 
       {/* Chart and Transactions */}
       <div className="grid gap-4 md:grid-cols-2">

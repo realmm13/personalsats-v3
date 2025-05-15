@@ -1,3 +1,5 @@
+'use client';
+
 import React, {
   createContext,
   useCallback,
@@ -6,7 +8,7 @@ import React, {
   useState,
   memo,
 } from "react";
-import { SimpleDialog, SimpleDialogProps } from "@/components/SimpleDialog";
+import { SimpleDialog, type SimpleDialogProps } from "@/components/SimpleDialog";
 import { cn } from "@/lib/utils";
 
 export type OpenDialogProps = {

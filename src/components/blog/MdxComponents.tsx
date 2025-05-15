@@ -1,6 +1,6 @@
 "use client";
 
-import { useMDXComponent } from "@content-collections/mdx/react";
+import { useMDXComponent } from "next-contentlayer/hooks";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 

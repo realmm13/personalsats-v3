@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { useForm, FormProvider } from "react-hook-form";
+import { useState, useRef, useEffect } from "react";
+import { useForm, FormProvider, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Plus, X, Download } from "lucide-react";
+import { type z } from "zod";
+import { Plus, X, Download, Bitcoin, Loader2 } from "lucide-react";
 import { FormFieldInput } from "@/components/FormFieldInput";
 import { FormFieldTextarea } from "@/components/FormFieldTextarea";
 import { CustomButton } from "@/components/CustomButton";
@@ -12,37 +12,40 @@ import { FormFieldSegmentedControl } from "@/components/FormFieldSegmentedContro
 import { format } from "date-fns";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { transactionSchema } from "@/schemas/transaction-schema";
+import { useBitcoinPrice } from "@/hooks/useBitcoinPrice";
+import { formatUSD } from "@/lib/price";
+import { FormFieldTags } from "@/components/FormFieldTags";
+import { encryptString } from "@/lib/encryption";
+import { useEncryption } from "@/context/EncryptionContext";
+import { submitTransaction } from '@/services/transactionService';
+import { encryptTx } from '@/lib/opensecret';
 
-const transactionFormSchema = z.object({
-  type: z.enum(["buy", "sell"]),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format (YYYY-MM-DD)"),
-  time: z.string().regex(/^\d{2}:\d{2}$/, "Invalid time format (HH:mm)"),
-  amount: z.string().refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
-    message: "Amount must be a positive number",
-  }),
-  price: z.string().refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) >= 0, {
-    message: "Price must be a non-negative number",
-  }),
-  fee: z.string().refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) >= 0, {
-    message: "Fee must be a non-negative number",
-  }),
-  wallet: z.string().min(1, "Wallet is required"),
-  tags: z.array(z.string()).optional(),
-  notes: z.string().optional(),
-});
+export type TransactionFormData = z.infer<typeof transactionSchema>;
 
-type TransactionFormData = z.infer<typeof transactionFormSchema>;
+interface AddTransactionFormProps {
+  onSuccess: () => void;
+}
 
-export function AddTransactionForm({ onSuccess }: { onSuccess: () => void }) { 
+export function AddTransactionForm({ onSuccess }: AddTransactionFormProps) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [currentPrice, setCurrentPrice] = useState<number | null>(null);
+  const [loadingPrice, setLoadingPrice] = useState(false);
+
+  const {
+    encryptionKey,
+    isLoadingKey,
+  } = useEncryption();
+
   const form = useForm<TransactionFormData>({
-    resolver: zodResolver(transactionFormSchema),
+    resolver: zodResolver(transactionSchema),
     defaultValues: {
       type: "buy",
-      date: format(new Date(), "yyyy-MM-dd"),
-      time: format(new Date(), "HH:mm"),
-      amount: "",
-      price: "",
-      fee: "0",
+      amount: 0,
+      price: 0,
+      fee: 0,
+      timestamp: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
       wallet: "",
       tags: [],
       notes: "",
@@ -51,79 +54,71 @@ export function AddTransactionForm({ onSuccess }: { onSuccess: () => void }) {
 
   const { register, handleSubmit, formState: { errors }, setValue, watch } = form;
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [tagInput, setTagInput] = useState("");
-  const [isFetchingPrice, setIsFetchingPrice] = useState(false);
-
-  const watchedTags = watch("tags") || [];
-
-  const handleAddTag = () => {
-    const newTag = tagInput.trim();
-    if (newTag && !watchedTags.includes(newTag)) {
-      setValue("tags", [...watchedTags, newTag], { shouldValidate: true });
-      setTagInput("");
-    }
-  };
-
-  const handleRemoveTag = (tagToRemove: string) => {
-    setValue("tags", watchedTags.filter(tag => tag !== tagToRemove), { shouldValidate: true });
-  };
-
-  const getCurrentPrice = async () => {
-    setIsFetchingPrice(true);
+  const fetchCurrentPrice = async () => {
+    setLoadingPrice(true);
     try {
-      const res = await fetch("/api/price/current"); 
-      if (!res.ok) throw new Error('Failed to fetch price');
-      const data = await res.json();
-      if (data.price?.usd) {
-        setValue("price", data.price.usd.toFixed(2), { shouldValidate: true }); 
+      const response = await fetch("/api/price/current");
+      if (!response.ok) throw new Error("Failed to fetch price");
+      const data = await response.json();
+      const priceNum = data.price?.usd;
+      if (typeof priceNum === 'number') {
+        setCurrentPrice(priceNum);
+        setValue("price", priceNum, { shouldValidate: true });
+      } else {
+        throw new Error("Invalid price format received");
       }
-    } catch (error) {
-      console.error("Failed to get current price:", error);
+    } catch (err) {
+      console.error("Price fetch error:", err);
+      setError(err instanceof Error ? err.message : "Could not fetch price");
     } finally {
-      setIsFetchingPrice(false);
+      setLoadingPrice(false);
     }
   };
 
   const onSubmit = async (data: TransactionFormData) => {
-    setIsSubmitting(true);
+    setLoading(true);
+    setError(null);
     try {
-      const timestamp = new Date(`${data.date}T${data.time}:00`);
-      const payload = {
-        type: data.type,
-        amount: parseFloat(data.amount),
-        price: parseFloat(data.price),
-        fee: parseFloat(data.fee),
-        timestamp: timestamp.toISOString(),
-        wallet: data.wallet,
-        tags: data.tags,
-        notes: data.notes,
+      // Compose a Transaction object (add any required fields)
+      const tx = {
+        ...data,
+        id: crypto.randomUUID(), // or another unique ID strategy
+        userId: '', // Fill if needed, or let backend infer from session
+        timestamp: new Date(data.timestamp).toISOString(),
       };
-
-      const response = await fetch("/api/transactions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload), 
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to create transaction");
+      if (!encryptionKey) {
+        setError('Encryption key not set');
+        setLoading(false);
+        return;
       }
-
+      const encryptedData = await encryptTx(tx, encryptionKey);
+      console.log('🔑 encryptedData:', encryptedData);
+      const payload = {
+        encryptedData,
+        type: tx.type,
+        amount: tx.amount,
+        price: tx.price,
+        fee: typeof tx.fee === 'number' ? tx.fee : 0,
+        timestamp: tx.timestamp,
+        wallet: tx.wallet || '',
+        tags: tx.tags || [],
+        notes: tx.notes || '',
+      };
+      console.log('🚀 payload:', payload);
+      await submitTransaction(payload);
       onSuccess();
-    } catch (error) {
-      console.error("Error creating transaction:", error);
+      form.reset();
+    } catch (err) {
+      console.error("Submit error:", err);
+      setError(err instanceof Error ? err.message : "An unexpected error occurred");
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
   return (
     <FormProvider {...form}>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormFieldSegmentedControl
           name="type"
           options={[
@@ -132,92 +127,57 @@ export function AddTransactionForm({ onSuccess }: { onSuccess: () => void }) {
           ]}
         />
         
-        <div className="grid grid-cols-2 gap-4">
-          <FormFieldInput name="date" label="Date" type="date" />
-          <FormFieldInput name="time" label="Time" type="time" />
-        </div>
+        <FormFieldInput name="timestamp" label="Date & Time" type="datetime-local" />
 
-        <FormFieldInput
-          name="amount"
-          label="Amount (BTC)"
-          type="number"
-          placeholder="0.00000000"
-        />
-
-        <div className="flex items-end gap-2">
-          <FormFieldInput 
-            name="price" 
-            label="Price (USD)" 
-            type="number" 
-            placeholder="0.00" 
-            className="flex-grow"
-          />
-          <CustomButton 
-            type="button" 
-            variant="filled"
-            onClick={getCurrentPrice}
-            loading={isFetchingPrice}
-            leftIcon={Download}
-            size="sm"
-            className="shrink-0 mb-[2px]"
-          >
-            Get Current
-          </CustomButton>
-        </div>
-
-        <FormFieldInput 
-          name="fee" 
-          label="Fee (BTC)" 
-          type="number" 
-          placeholder="0.00000000" 
-        />
-
-        <FormFieldInput 
-          name="wallet" 
-          label="Wallet" 
-          type="text" 
-          placeholder="e.g., Ledger, Exchange" 
-        />
-
-        <div>
-          <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 block mb-2">Tags</label>
-          <div className="flex items-center gap-2 mb-2">
-            <Input 
-              type="text"
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              placeholder="Add a tag..."
-              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddTag(); } }}
-            />
-            <CustomButton type="button" variant="filled" onClick={handleAddTag} size="sm">Add</CustomButton>
+        <div className="flex gap-4">
+          <FormFieldInput name="amount" label="Amount (BTC)" type="number" className="flex-1" />
+          <div className="flex-1">
+            <FormFieldInput name="price" label="Price per BTC (USD)" type="number" />
+            <CustomButton
+              type="button"
+              variant="ghost"
+              color="primary"
+              size="sm"
+              className={`mt-1 px-0 h-auto text-white ${loadingPrice ? "animate-spin" : ""}`}
+              onClick={fetchCurrentPrice}
+              disabled={loadingPrice}
+              leftIcon={loadingPrice ? Loader2 : Bitcoin}
+            >
+              {loadingPrice ? "Fetching..." : "Get Current Price"}
+            </CustomButton>
           </div>
-          <div className="flex flex-wrap gap-1">
-            {watchedTags.map((tag) => (
-              <Badge key={tag} variant="default" color="gray" className="cursor-pointer">
-                {tag}
-                <X 
-                  className="ml-1 h-3 w-3"
-                  onClick={() => handleRemoveTag(tag)}
-                />
-              </Badge>
-            ))}
-          </div>
-          <input type="hidden" {...register("tags")} /> 
         </div>
 
-        <FormFieldTextarea
-          name="notes"
-          label="Notes"
-          placeholder="Add any notes about this transaction..."
+        <FormFieldInput name="fee" label="Fee (USD)" type="number" />
+
+        <FormFieldInput name="wallet" label="Wallet/Exchange" />
+
+        <Controller
+          name="tags"
+          control={form.control}
+          render={({ field }) => (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tags</label>
+              <FormFieldTags 
+                value={field.value || []}
+                onChange={field.onChange}
+              />
+            </div>
+          )}
         />
 
-        <CustomButton
-          type="submit"
-          loading={isSubmitting}
-          leftIcon={Plus}
+        <FormFieldTextarea name="notes" label="Notes" />
+
+        {error && <p className="text-sm text-red-600">Error: {error}</p>}
+
+        <CustomButton 
+          type="submit" 
+          loading={loading || isLoadingKey}
+          disabled={!encryptionKey || isLoadingKey || loading}
+          color="primary" 
           className="w-full"
         >
-          Add Transaction
+          {isLoadingKey ? "Waiting for key..." : (loading ? "Saving..." : "Add Transaction")}
         </CustomButton>
       </form>
     </FormProvider>

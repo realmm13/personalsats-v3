@@ -1,6 +1,6 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
+  // output   = "../src/generated/prisma" // Removed to default to node_modules
 }
 
 datasource db {
@@ -10,8 +10,8 @@ datasource db {
 }
 
 model User {
-  id            String    @id
-  createdAt     DateTime
+  id            String    @id @default(cuid())
+  createdAt     DateTime  @default(now())
   updatedAt     DateTime? @updatedAt
   name          String
   email         String    @unique
@@ -53,7 +53,14 @@ model User {
 
   onboarded Boolean @default(false)
 
+  // Add the new field for accounting method
+  accountingMethod String @default("HIFO") // Options: FIFO, LIFO, HIFO
+
+  // New: per-user encryption salt for client-side key derivation
+  encryptionSalt String?
+
   bitcoinTransactions BitcoinTransaction[]
+  dailySnapshots      DailySnapshot[]
 
   @@unique([username])
   @@map("users")
@@ -75,9 +82,10 @@ model Session {
 }
 
 model Account {
-  id                    String    @id
+  id                    String    @id @default(cuid())
   accountId             String
   providerId            String
+  type                  String?
   userId                String
   user                  User      @relation(fields: [userId], references: [id])
   accessToken           String?
@@ -119,17 +127,94 @@ model UTImage {
 }
 
 model BitcoinTransaction {
-  id        String   @id @default(cuid())
-  type      String   // 'buy' or 'sell'
-  amount    Float
-  price     Float
-  fee       Float?   @default(0)
-  timestamp DateTime @default(now())
-  wallet    String
-  tags      String[] @default([])
-  notes     String?
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id               String    @id @default(cuid())
+  userId           String
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  timestamp        DateTime
+  type             String?
+  amount           Float?
+  asset            String    @default("BTC")
+  price            Float?
+  priceAsset       String?   @default("USD")
+  fee              Float?
+  feeAsset         String?
+  wallet           String?
+  counterparty     String?
+  tags             String[]
+  notes            String?
+  exchangeTxId     String?
+  encryptedData    String?   @db.Text
+  encryptionVersion Int      @default(1)
+  encryptionNonce   String?
+  encryptionError   Boolean  @default(false)
+  encryptionKeyId   String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  allocations      Allocation[] @relation("TxAllocations")
+  lots             Lot[]        @relation("TxLots")
+  @@index([userId, timestamp])
+}
 
-  @@index([userId])
+// --- Model for Historical Prices ---
+model PriceHistory {
+  timestamp DateTime @id // Use timestamp as the unique ID
+  priceUsd  Float    // Store the USD price at that time
+
+  @@map("price_history") // Optional: define a table name
+}
+// --- End PriceHistory Model ---
+
+// --- Tax Reporting Models ---
+model Lot {
+  id             String             @id @default(cuid())
+  txId           String             // Link to the BUY transaction that created this lot
+  transaction    BitcoinTransaction @relation("TxLots", fields: [txId], references: [id])
+  openedAt       DateTime           // Timestamp of the BUY transaction
+  originalAmount Float              // Original BTC quantity acquired in this lot
+  costBasisUsd   Float              // Total USD cost basis for this lot (price * originalAmount from BUY tx)
+  remainingQty   Float              // BTC quantity remaining in this lot (starts = originalAmount, decreases with sells)
+  
+  // Fields populated when the lot is fully closed (remainingQty = 0)
+  closedAt       DateTime?          // Timestamp of the SELL transaction that closed the lot
+  proceedsUsd    Float?             // Total USD proceeds from selling this lot (sum of proceeds from allocations)
+  gainUsd        Float?             // Realized gain/loss in USD (proceedsUsd - costBasisUsd)
+  term           String?            // "Short" or "Long" based on holding period (closedAt - openedAt)
+
+  allocations    Allocation[]       @relation("LotAllocations") // Relation back to allocations using this lot
+
+  @@index([txId]) // Index on the transaction that created the lot
+}
+
+model Allocation {
+  id          String             @id @default(cuid())
+  txId        String             // Link to the transaction this allocation is part of
+  transaction BitcoinTransaction @relation("TxAllocations", fields: [txId], references: [id])
+  
+  lotId       String             // Link to the specific Lot this allocation uses/reduces
+  lot         Lot                @relation("LotAllocations", fields: [lotId], references: [id])
+
+  qty         Float              // how much BTC allocated from the lot
+  costUsd     Float              // cost basis portion allocated
+  proceedsUsd Float?             // USD received (for sells/disposals)
+  gainUsd     Float?             // realized gain or loss in USD
+
+  createdAt   DateTime           @default(now())
+}
+// --- End Tax Reporting Models ---
+
+// --- DailySnapshot Model (Remains the same) ---
+model DailySnapshot {
+  userId    String
+  date      DateTime
+  totalCost Float
+  totalValue Float
+
+  user      User @relation(fields: [userId], references: [id])
+
+  @@id([userId, date]) 
+}
+
+model DailyPrice {
+  date  DateTime @id
+  price Float
 }

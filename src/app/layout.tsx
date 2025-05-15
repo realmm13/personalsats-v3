@@ -17,6 +17,8 @@ import { hotkeys } from "@/config/hotkeys";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { APP_NAME, APP_DESCRIPTION } from "@/config/config";
 import { LevaPanel } from "@/components/dev/LevaPanel";
+import { EncryptionProvider } from "@/context/EncryptionContext";
+import ClientGate from '@/components/ClientGate';
 
 export const metadata: Metadata = {
   title: APP_NAME,
@@ -36,6 +38,8 @@ export const metadata: Metadata = {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // console.log("🟦 ROOT layout rendering");
+  // console.log("🚀 root layout rendering header?");
   return (
     <html
       lang="en"
@@ -50,20 +54,25 @@ export default async function RootLayout({
           <TRPCReactProvider>
             <ThemeWrapper>
               <MediaQueriesProvider>
-                <KitzeUIProviders>
-                  <ErrorBoundary FallbackComponent={RootErrorFallback}>
-                    <Suspense fallback={<FullPageSpinner />}>
-                      {children}
-                    </Suspense>
-                  </ErrorBoundary>
-                  <RegisterHotkeys hotkeys={hotkeys} />
-                  <Toaster />
-                </KitzeUIProviders>
+                <EncryptionProvider>
+                  <ClientGate>
+                    <KitzeUIProviders>
+                      <ErrorBoundary FallbackComponent={RootErrorFallback}>
+                        <Suspense fallback={<FullPageSpinner />}>
+                          {children}
+                        </Suspense>
+                      </ErrorBoundary>
+                      <RegisterHotkeys hotkeys={hotkeys} />
+                      <Toaster />
+                    </KitzeUIProviders>
+                  </ClientGate>
+                </EncryptionProvider>
               </MediaQueriesProvider>
             </ThemeWrapper>
           </TRPCReactProvider>
         </NuqsAdapter>
-        <LevaPanel />
+        {/* Only render Leva panel in development */}
+        {process.env.NODE_ENV === 'development' && <LevaPanel />}
       </body>
     </html>
   );
