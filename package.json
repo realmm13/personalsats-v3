@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "(kill -9 $(lsof -t -i:3000) || true) && next dev -p 3000",
-    "build": "npx prisma migrate deploy && npx prisma generate && next build",
-    "build:turbo": "npx prisma migrate deploy && npx prisma generate && next build --turbo",
+    "build": "npx prisma generate && next build",
+    "build:turbo": "npx prisma generate && next build --turbo",
     "db:generate": "prisma generate",
     "db:studio": "prisma studio",
     "db:migrate": "prisma migrate dev",
