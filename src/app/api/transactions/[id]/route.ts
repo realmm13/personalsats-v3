@@ -1,8 +1,19 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { auth } from "@/server/auth";
 import { db } from "@/server/db";
+import { generateEncryptionKey, encryptString, decryptString } from '@/lib/encryption'
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+const passphrase = process.env.ENCRYPTION_PASSPHRASE!
+const saltHex = process.env.ENCRYPTION_SALT!
+if (!passphrase || !saltHex) throw new Error('Missing ENCRYPTION_PASSPHRASE or ENCRYPTION_SALT env var')
+const salt = Buffer.from(saltHex, 'hex')
+
+async function getKey() {
+  return generateEncryptionKey(passphrase, salt)
+}
+
+export async function GET(req: NextRequest, context: { params: { id: string } }) {
+  const { params } = context;
   try {
     const session = await auth.api.getSession({ headers: req.headers });
     if (!session?.user?.id) {
@@ -39,14 +50,21 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json({ error: 'Transaction not found or access denied' }, { status: 404 });
     }
 
-    return NextResponse.json(transaction);
+    const key = await getKey()
+    const decrypted = {
+      ...transaction,
+      notes: transaction.notes ? await decryptString(transaction.notes, key) : null
+    }
+
+    return NextResponse.json(decrypted);
   } catch (error) {
     console.error("Error fetching transaction:", error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, context: { params: { id: string } }) {
+  const { params } = context;
   try {
     const session = await auth.api.getSession({ headers: req.headers });
     if (!session?.user?.id) {
@@ -81,16 +99,22 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   }
 }
 
-// --- Add PUT Handler ---
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+interface UpdateTransactionBody {
+  encryptedData: string;
+  notes?: string;
+  timestamp?: string;
+}
+
+export async function PUT(req: NextRequest, context: { params: { id: string } }) {
+  const { params } = context;
   try {
     const session = await auth.api.getSession({ headers: req.headers });
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await req.json();
-    const { encryptedData, timestamp } = body; // Expect encryptedData and potentially new timestamp
+    const body = await req.json() as UpdateTransactionBody;
+    const { encryptedData, timestamp } = body;
 
     if (!encryptedData) {
       return NextResponse.json({ error: 'Missing encryptedData' }, { status: 400 });
@@ -110,14 +134,19 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         return NextResponse.json({ error: 'Forbidden - You do not own this transaction' }, { status: 403 });
     }
 
-    // Prepare update data - only update fields that are provided
-    const updateData: { encryptedData: string; timestamp?: Date } = {
+    const key = await getKey()
+    const dataToStore: {
+      encryptedData: string;
+      notes?: string;
+      timestamp?: Date;
+    } = {
       encryptedData: encryptedData,
-    };
+      notes: body.notes ? await encryptString(body.notes, key) : undefined
+    }
 
     if (timestamp) {
       try {
-        updateData.timestamp = new Date(timestamp); // Validate and convert timestamp if provided
+        dataToStore.timestamp = new Date(timestamp);
       } catch (dateError) {
         return NextResponse.json({ error: 'Invalid timestamp format' }, { status: 400 });
       }
@@ -126,19 +155,21 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     const updatedTransaction = await db.bitcoinTransaction.update({
       where: {
         id: params.id,
-        // No userId needed here, checked above
       },
-      data: updateData,
+      data: dataToStore,
     });
 
-    return NextResponse.json(updatedTransaction, { status: 200 });
+    const decrypted = {
+      ...updatedTransaction,
+      notes: updatedTransaction.notes ? await decryptString(updatedTransaction.notes, key) : null
+    }
+
+    return NextResponse.json(decrypted);
   } catch (error) {
     console.error("Error updating transaction:", error);
-    // Handle potential JSON parsing errors etc.
     if (error instanceof SyntaxError) {
       return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
-}
-// --- End PUT Handler --- 
+} 
