@@ -22,10 +22,7 @@ export const iconSizes: Record<Size, number> = {
   xl: 28,
 };
 
-interface ElementAttributes extends React.HTMLAttributes<HTMLElement> {
-  'data-testid'?: string;
-  'aria-label'?: string;
-}
+type ElementAttributes = React.JSX.IntrinsicElements['a'] | React.JSX.IntrinsicElements['button'];
 
 export interface HoverableIconProps {
   Icon: LucideIcon;
@@ -69,7 +66,7 @@ export const HoverableIcon: ReactFC<HoverableIconProps> = ({
 
   // Add href only if it's an anchor or Link
   if (href && (Component === "a" || Component === Link)) {
-    elementAttributes.href = href;
+    (elementAttributes as React.JSX.IntrinsicElements['a']).href = href;
   }
 
   const iconElement = (
