@@ -6,11 +6,16 @@ export function RootErrorFallback({
   error,
   resetErrorBoundary,
 }: FallbackProps) {
-  // You can customize this further, log the error, etc.
+  // Defensive: handle undefined or non-object errors
+  const message = typeof error === 'object' && error && 'message' in error
+    ? error.message
+    : typeof error === 'string'
+      ? error
+      : 'An unknown error occurred.';
   return (
     <div role="alert" className="p-4">
       <p>Something went wrong:</p>
-      <pre style={{ color: "red" }}>{error.message}</pre>
+      <pre style={{ color: "red" }}>{message}</pre>
       <button onClick={resetErrorBoundary}>Try again</button>
     </div>
   );
