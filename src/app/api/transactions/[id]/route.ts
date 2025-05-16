@@ -12,7 +12,7 @@ async function getKey() {
   return generateEncryptionKey(passphrase, salt)
 }
 
-export async function GET(req: NextRequest, context: { params: { id: string } }) {
+export async function GET(req: NextRequest, context: any) {
   const id = context.params.id;
   try {
     const session = await auth.api.getSession({ headers: req.headers });
@@ -63,7 +63,7 @@ export async function GET(req: NextRequest, context: { params: { id: string } })
   }
 }
 
-export async function DELETE(req: NextRequest, context: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, context: any) {
   const id = context.params.id;
   try {
     const session = await auth.api.getSession({ headers: req.headers });
@@ -105,7 +105,7 @@ interface UpdateTransactionBody {
   timestamp?: string;
 }
 
-export async function PUT(req: NextRequest, context: { params: { id: string } }) {
+export async function PUT(req: NextRequest, context: any) {
   const id = context.params.id;
   try {
     const session = await auth.api.getSession({ headers: req.headers });
