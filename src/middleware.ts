@@ -24,34 +24,33 @@ const alwaysAllowedRoutes = [
 ];
 
 export function middleware(req: NextRequest) {
-  const origin = req.headers.get("origin") ?? "";
+  const origin = req.headers.get("origin") || "";
   const method = req.method;
-  const pathname = req.nextUrl.pathname;
 
-  // 1. Preflight: allow OPTIONS early
+  // 1. Short-circuit preflight OPTIONS before any other logic
   if (method === "OPTIONS") {
     const res = new NextResponse(null, { status: 200 });
     res.headers.set("Access-Control-Allow-Origin", origin);
     res.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-    res.headers.set(
-      "Access-Control-Allow-Headers",
-      "Content-Type, Authorization"
-    );
+    res.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    res.headers.set("Access-Control-Max-Age", "86400");
     return res;
   }
 
   // 2. Base response (continue with normal logic)
   const res = NextResponse.next();
 
-  // 3. Apply CORS to all other responses for API routes
-  if (pathname.startsWith("/api") && allowedOrigins.includes(origin)) {
+  // 3. Apply CORS to all other responses
+  if (allowedOrigins.includes(origin)) {
     res.headers.set("Access-Control-Allow-Origin", origin);
   }
 
-  // 4. Only run auth logic for non-API routes
-  if (!pathname.startsWith("/api")) {
-    return authMiddleware(req) ?? res;
-  }
+  // 4. Only run auth/session logic for non-API, non-OPTIONS requests
+  // (import and call your authMiddleware here if needed, after CORS logic)
+  // Example:
+  // if (!req.nextUrl.pathname.startsWith("/api")) {
+  //   return await authMiddleware(req) ?? res;
+  // }
 
   return res;
 }
