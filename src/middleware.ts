@@ -17,7 +17,44 @@ const alwaysAllowedRoutes = [
   "/env-client",
 ];
 
-export default async function authMiddleware(request: NextRequest) {
+// CORS configuration
+const allowedOrigins = [
+  'https://personalsats.com',
+  'https://www.personalsats.com',
+  'http://localhost:3000'
+];
+
+export default async function middleware(request: NextRequest) {
+  // Handle CORS preflight requests
+  if (request.method === 'OPTIONS') {
+    const origin = request.headers.get('origin');
+    if (origin && allowedOrigins.includes(origin)) {
+      return new NextResponse(null, {
+        status: 204,
+        headers: {
+          'Access-Control-Allow-Origin': origin,
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          'Access-Control-Max-Age': '86400',
+        },
+      });
+    }
+    return new NextResponse(null, { status: 403 });
+  }
+
+  // Handle CORS for actual requests
+  const origin = request.headers.get('origin');
+  if (origin && allowedOrigins.includes(origin)) {
+    const response = await authMiddleware(request);
+    response.headers.set('Access-Control-Allow-Origin', origin);
+    return response;
+  }
+
+  // If no origin or not allowed, proceed with auth middleware
+  return authMiddleware(request);
+}
+
+async function authMiddleware(request: NextRequest) {
   const sessionCookie = getSessionCookie(request);
   const pathName = request.nextUrl.pathname;
 
