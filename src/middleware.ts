@@ -1,8 +1,14 @@
+import { NextRequest, NextResponse } from "next/server";
 import { betterFetch } from "@better-fetch/fetch";
-import { NextResponse, type NextRequest } from "next/server";
 import { serverEnv } from "@/env";
 import type { Session } from "@/server/auth";
 import { getSessionCookie } from "better-auth/cookies";
+
+const allowedOrigins = [
+  "https://personalsats.com",
+  "https://www.personalsats.com",
+  "http://localhost:3000"
+];
 
 const authRoutes = ["/signin", "/signup", "/email-verified"];
 const passwordRoutes = ["/reset-password", "/forgot-password"];
@@ -17,37 +23,37 @@ const alwaysAllowedRoutes = [
   "/env-client",
 ];
 
-// CORS configuration
-const allowedOrigins = [
-  'https://personalsats.com',
-  'https://www.personalsats.com',
-  'http://localhost:3000'
-];
+export function middleware(req: NextRequest) {
+  const origin = req.headers.get("origin") ?? "";
+  const method = req.method;
+  const pathname = req.nextUrl.pathname;
 
-export default async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-
-  // Handle CORS for API routes only
-  if (pathname.startsWith('/api')) {
-    const origin = request.headers.get('origin');
-    // Allow preflight
-    if (request.method === 'OPTIONS') {
-      const res = new NextResponse(null, { status: 200 });
-      res.headers.set('Access-Control-Allow-Origin', origin ?? '*');
-      res.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-      res.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-      return res;
-    }
-    // Add CORS headers to all responses
-    const res = NextResponse.next();
-    if (origin && allowedOrigins.includes(origin)) {
-      res.headers.set('Access-Control-Allow-Origin', origin);
-    }
+  // 1. Preflight: allow OPTIONS early
+  if (method === "OPTIONS") {
+    const res = new NextResponse(null, { status: 200 });
+    res.headers.set("Access-Control-Allow-Origin", origin);
+    res.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    res.headers.set(
+      "Access-Control-Allow-Headers",
+      "Content-Type, Authorization"
+    );
     return res;
   }
 
-  // For all other routes, run your existing auth logic
-  return authMiddleware(request);
+  // 2. Base response (continue with normal logic)
+  const res = NextResponse.next();
+
+  // 3. Apply CORS to all other responses for API routes
+  if (pathname.startsWith("/api") && allowedOrigins.includes(origin)) {
+    res.headers.set("Access-Control-Allow-Origin", origin);
+  }
+
+  // 4. Only run auth logic for non-API routes
+  if (!pathname.startsWith("/api")) {
+    return authMiddleware(req) ?? res;
+  }
+
+  return res;
 }
 
 async function authMiddleware(request: NextRequest) {
