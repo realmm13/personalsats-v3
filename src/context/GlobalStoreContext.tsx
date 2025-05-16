@@ -12,13 +12,13 @@ import {
   type EditEntityDialogProps,
 } from "@/components/EditEntityDialog";
 
-type EditEntityInDialogOptions = Omit<EditEntityDialogProps, "close"> & {
+type EditEntityInDialogOptions<T extends Record<string, unknown>> = Omit<EditEntityDialogProps<T>, "close"> & {
   title: string;
   size?: "sm" | "md" | "lg" | "xl" | "full";
 };
 
 type GlobalStore = {
-  editEntityInDialog: (options: EditEntityInDialogOptions) => string;
+  editEntityInDialog: (options: EditEntityInDialogOptions<any>) => string;
   isCommandPaletteOpen: boolean;
   setCommandPaletteOpen: (open: boolean) => void;
   toggleCommandPalette: () => void;
@@ -43,16 +43,11 @@ export function GlobalStoreProvider({
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
 
   const editEntityInDialog = useCallback(
-    (options: EditEntityInDialogOptions) => {
+    (options: EditEntityInDialogOptions<any>) => {
       return openDialog({
         title: options.title,
         component: ({ close }: { close: () => void }) => (
-          <EditEntityDialog
-            Component={options.Component}
-            props={options.props}
-            onSubmit={options.onSubmit}
-            close={close}
-          />
+          <EditEntityDialog {...options} onClose={close} />
         ),
         size: options.size || "lg",
       });
