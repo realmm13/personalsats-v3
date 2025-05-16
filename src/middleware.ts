@@ -30,29 +30,20 @@ export default async function middleware(request: NextRequest) {
   // Handle CORS for API routes only
   if (pathname.startsWith('/api')) {
     const origin = request.headers.get('origin');
-    // Handle CORS preflight
+    // Allow preflight
     if (request.method === 'OPTIONS') {
-      if (origin && allowedOrigins.includes(origin)) {
-        return new NextResponse(null, {
-          status: 204,
-          headers: {
-            'Access-Control-Allow-Origin': origin,
-            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-            'Access-Control-Max-Age': '86400',
-          },
-        });
-      }
-      return new NextResponse(null, { status: 403 });
+      const res = new NextResponse(null, { status: 200 });
+      res.headers.set('Access-Control-Allow-Origin', origin ?? '*');
+      res.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+      res.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      return res;
     }
-    // For actual API requests, add CORS headers if allowed
+    // Add CORS headers to all responses
+    const res = NextResponse.next();
     if (origin && allowedOrigins.includes(origin)) {
-      const response = NextResponse.next();
-      response.headers.set('Access-Control-Allow-Origin', origin);
-      return response;
+      res.headers.set('Access-Control-Allow-Origin', origin);
     }
-    // If no origin or not allowed, just proceed
-    return NextResponse.next();
+    return res;
   }
 
   // For all other routes, run your existing auth logic
