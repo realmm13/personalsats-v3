@@ -25,32 +25,37 @@ const allowedOrigins = [
 ];
 
 export default async function middleware(request: NextRequest) {
-  // Handle CORS preflight requests
-  if (request.method === 'OPTIONS') {
+  const { pathname } = request.nextUrl;
+
+  // Handle CORS for API routes only
+  if (pathname.startsWith('/api')) {
     const origin = request.headers.get('origin');
-    if (origin && allowedOrigins.includes(origin)) {
-      return new NextResponse(null, {
-        status: 204,
-        headers: {
-          'Access-Control-Allow-Origin': origin,
-          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-          'Access-Control-Max-Age': '86400',
-        },
-      });
+    // Handle CORS preflight
+    if (request.method === 'OPTIONS') {
+      if (origin && allowedOrigins.includes(origin)) {
+        return new NextResponse(null, {
+          status: 204,
+          headers: {
+            'Access-Control-Allow-Origin': origin,
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+            'Access-Control-Max-Age': '86400',
+          },
+        });
+      }
+      return new NextResponse(null, { status: 403 });
     }
-    return new NextResponse(null, { status: 403 });
+    // For actual API requests, add CORS headers if allowed
+    if (origin && allowedOrigins.includes(origin)) {
+      const response = NextResponse.next();
+      response.headers.set('Access-Control-Allow-Origin', origin);
+      return response;
+    }
+    // If no origin or not allowed, just proceed
+    return NextResponse.next();
   }
 
-  // Handle CORS for actual requests
-  const origin = request.headers.get('origin');
-  if (origin && allowedOrigins.includes(origin)) {
-    const response = await authMiddleware(request);
-    response.headers.set('Access-Control-Allow-Origin', origin);
-    return response;
-  }
-
-  // If no origin or not allowed, proceed with auth middleware
+  // For all other routes, run your existing auth logic
   return authMiddleware(request);
 }
 
@@ -103,7 +108,7 @@ async function authMiddleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Skip Next.js internals and all static files, unless found in search params
-    "/((?!api|_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    // Run middleware for all routes (including /api), but logic inside will split
+    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
   ],
 };
