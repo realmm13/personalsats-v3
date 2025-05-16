@@ -194,10 +194,7 @@ type ColorMap = {
   [key: string]: ColorValue;
 };
 
-interface ButtonAttributes extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  'data-testid'?: string;
-  'aria-label'?: string;
-}
+type ButtonAttributes = React.JSX.IntrinsicElements['button'] | React.JSX.IntrinsicElements['a'];
 
 export const CustomButton: ReactFC<CustomButtonProps> = ({
   className,
@@ -310,8 +307,8 @@ export const CustomButton: ReactFC<CustomButtonProps> = ({
   // Add specific attributes based on component type
   if (Component === "button") {
     buttonAttributes.disabled = disabled || loading;
-  } else if (href) {
-    buttonAttributes.href = href;
+  } else if (href && Component === 'a') {
+    (buttonAttributes as React.JSX.IntrinsicElements['a']).href = href;
   }
 
   const button = <Component {...buttonAttributes}>{buttonContent}</Component>;
