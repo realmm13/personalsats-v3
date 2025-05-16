@@ -38,3 +38,5 @@ export function EditEntityDialog<T extends Record<string, unknown>>({
     </Suspense>
   );
 }
+
+export type { EditEntityDialogProps };
