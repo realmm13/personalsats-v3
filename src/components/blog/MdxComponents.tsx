@@ -1,6 +1,5 @@
 "use client";
 
-import { useMDXComponent } from "next-contentlayer/hooks";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -108,6 +107,6 @@ const defaultComponents = {
 };
 
 export function Mdx({ code }: MdxProps) {
-  const MDXComponent = useMDXComponent(code);
-  return <MDXComponent components={defaultComponents} />;
+  // TODO: Replace with direct MDX rendering logic using @next/mdx
+  return <div>Placeholder for future MDX rendering logic</div>;
 }
