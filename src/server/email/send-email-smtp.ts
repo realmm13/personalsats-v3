@@ -60,16 +60,10 @@ export const sendEmailSmtp = async ({
       const info = await smtpTransport.sendMail(mailOptions);
       console.log(` -> Email sent to ${recipient}: ${info.messageId}`);
       results.push({ data: { messageId: info.messageId }, error: null });
-    } catch (error: any) {
-      const errorMessage = error?.message || "Unknown SMTP sending error";
-      const errorName = error?.name || "SmtpSendError";
-      console.error(` -> Error sending email to ${recipient}:`, errorMessage);
-      results.push({
-        data: null,
-        error: { message: errorMessage, name: errorName },
-      });
-      // Optional: Decide whether to throw immediately or collect all results
-      // throw new Error(`Failed to send email to ${recipient}: ${errorMessage}`);
+    } catch (error: unknown) {
+      console.error('Error sending email via SMTP:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to send email via SMTP: ${errorMessage}`);
     }
   }
 

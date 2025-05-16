@@ -1,9 +1,25 @@
-// @ts-nocheck
 import { db } from '@/lib/db';
-import { auth } from '@/lib/auth'; // direct Better Auth import
+import { auth } from '@/lib/auth';
 import { NextResponse, type NextRequest } from 'next/server';
 import { processBulkImportedTransactions } from '@/lib/transactions/process';
 import { getDailyBtcUsdPrice } from '@/lib/price';
+
+interface BulkImportRow {
+  encryptedData: string;
+  type: string;
+  amount: number;
+  price?: number;
+  priceAsset?: string;
+  fee?: number;
+  timestamp: string | number | Date;
+  wallet?: string;
+  tags?: string[];
+  notes?: string;
+}
+
+interface BulkImportPayload {
+  rows: BulkImportRow[];
+}
 
 export async function POST(req: NextRequest) {
   // 1. Auth the user and get userId
@@ -14,7 +30,7 @@ export async function POST(req: NextRequest) {
   const userId = session.user.id;
 
   // Debug log the incoming payload
-  const payload = await req.json();
+  const payload = await req.json() as BulkImportPayload;
   console.log('🟢 Bulk import payload:', JSON.stringify(payload, null, 2));
 
   // Accept an array of transactions with encryptedData and clear fields

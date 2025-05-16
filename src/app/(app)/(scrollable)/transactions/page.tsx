@@ -269,7 +269,7 @@ export default function TransactionsPage() {
              <div className="flex flex-wrap items-center gap-4 p-4 bg-card border rounded-lg">
                  {/* Filter controls... */} 
                  <span className="font-medium text-sm">Filters:</span>
-                 <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as any)} >
+                 <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as "all" | "buy" | "sell" | "deposit" | "withdrawal" | "interest")} >
                     <SelectTrigger className="w-auto min-w-[100px] h-9 text-sm"><SelectValue placeholder="Type" /></SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">All Types</SelectItem>
@@ -362,7 +362,7 @@ export default function TransactionsPage() {
       {/* Filters */} 
       <div className="flex flex-wrap items-center gap-4 p-4 bg-card border rounded-lg">
         <span className="font-medium text-sm">Filters:</span>
-        <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as any)} >
+        <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as "all" | "buy" | "sell" | "deposit" | "withdrawal" | "interest")} >
             <SelectTrigger className="w-auto min-w-[100px] h-9 text-sm"><SelectValue placeholder="Type" /></SelectTrigger>
             <SelectContent>
                 <SelectItem value="all">All Types</SelectItem>

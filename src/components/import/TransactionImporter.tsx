@@ -138,7 +138,7 @@ export function TransactionImporter({
 
     let adapter: (rows: Record<string, any>[]) => Promise<ProcessedImport[]> | ProcessedImport[];
     if (finalAdapterType === 'river') {
-      adapter = processRiverCsv as any;
+      adapter = processRiverCsv;
     } else { // It must be 'strike'
       adapter = processStrikeCsv;
     }
@@ -161,7 +161,7 @@ export function TransactionImporter({
         toast.info(`Successfully parsed ${results.data.length} rows. Processing...`);
 
         try {
-          const processedData: ProcessedImport[] = await adapter(results.data as any[]); 
+          const processedData: ProcessedImport[] = await adapter(results.data); 
           console.log("Processed Transactions:", processedData);
 
           console.log('All processedData before payload:', processedData);

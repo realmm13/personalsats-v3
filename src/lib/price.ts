@@ -7,32 +7,82 @@ interface PriceCache {
   timestamp: number;
 }
 
+interface CoinbaseResponse {
+  data: {
+    amount: string;
+  };
+}
+
+interface BinanceResponse {
+  price: string;
+}
+
+interface KrakenResponse {
+  result: {
+    XXBTZUSD: {
+      c: string[];
+    };
+  };
+}
+
+type PriceApiResponse = CoinbaseResponse | BinanceResponse | KrakenResponse;
+
+interface PriceApi {
+  url: string;
+  parser: (data: PriceApiResponse) => number;
+  headers: Record<string, string>;
+}
+
+// Type guards
+function isCoinbaseResponse(data: PriceApiResponse): data is CoinbaseResponse {
+  return 'data' in data && 'amount' in data.data;
+}
+
+function isBinanceResponse(data: PriceApiResponse): data is BinanceResponse {
+  return 'price' in data;
+}
+
+function isKrakenResponse(data: PriceApiResponse): data is KrakenResponse {
+  return 'result' in data && 'XXBTZUSD' in data.result && Array.isArray(data.result.XXBTZUSD.c);
+}
+
 const CACHE_DURATION = clientEnv.NEXT_PUBLIC_PRICE_CACHE_DURATION;
 const RATE_LIMIT_DURATION = 60000; // 1 minute
 const MAX_RETRIES = 3;
 
 // Price APIs in order of preference
-const PRICE_APIS = [
+const PRICE_APIS: PriceApi[] = [
   {
     url: 'https://api.coinbase.com/v2/prices/BTC-USD/spot',
-    parser: (data: any) => parseFloat(data.data.amount),
+    parser: (data: PriceApiResponse) => {
+      if (!isCoinbaseResponse(data)) throw new Error('Invalid Coinbase response');
+      return parseFloat(data.data.amount);
+    },
     headers: {
       'Accept': 'application/json'
-    } as Record<string, string>
+    }
   },
   {
     url: 'https://api.binance.us/api/v3/ticker/price?symbol=BTCUSD',
-    parser: (data: any) => parseFloat(data.price),
+    parser: (data: PriceApiResponse) => {
+      if (!isBinanceResponse(data)) throw new Error('Invalid Binance response');
+      return parseFloat(data.price);
+    },
     headers: {
       'Accept': 'application/json'
-    } as Record<string, string>
+    }
   },
   {
     url: 'https://api.kraken.com/0/public/Ticker?pair=XBTUSD',
-    parser: (data: any) => parseFloat(data.result.XXBTZUSD.c[0]),
+    parser: (data: PriceApiResponse) => {
+      if (!isKrakenResponse(data)) throw new Error('Invalid Kraken response');
+      const price = data.result.XXBTZUSD.c[0];
+      if (!price) throw new Error('No price found in Kraken response');
+      return parseFloat(price);
+    },
     headers: {
       'Accept': 'application/json'
-    } as Record<string, string>
+    }
   }
 ];
 
@@ -91,7 +141,7 @@ async function fetchBitcoinPrice(): Promise<number> {
         throw new Error(`API error: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as PriceApiResponse;
       const price = api.parser(data);
       return price;
     } catch (error) {

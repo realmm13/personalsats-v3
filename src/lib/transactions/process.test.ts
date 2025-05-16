@@ -38,6 +38,7 @@ describe('processTransaction Service', () => {
     user: { 
       id: TEST_USER_ID, 
       encryptionPhrase: TEST_PASSPHRASE, 
+      encryptionSalt: 'test-salt',
       accountingMethod: TEST_ACCOUNTING_METHOD 
     }
   };
@@ -47,12 +48,8 @@ describe('processTransaction Service', () => {
     // Default mock implementations
     mockEncryption.generateEncryptionKey.mockResolvedValue(MOCK_ENCRYPTION_KEY);
     // Setup $transaction mock to execute callback by default
-    mockDb.$transaction.mockImplementation(async (callback: any) => {
-       const prismaMock = {
-         allocation: { create: mockDb.allocation.create },
-         lot: { update: mockDb.lot.update },
-       };
-       return await callback(prismaMock);
+    mockDb.$transaction.mockImplementation(async (callback: (tx: typeof mockDb) => Promise<unknown>) => {
+      return callback(mockDb);
     });
   });
 

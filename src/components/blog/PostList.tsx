@@ -10,7 +10,7 @@ export function PostList({ posts }: PostListProps) {
     <div className="grid gap-10 sm:grid-cols-1 md:grid-cols-2">
       {posts
         .map((post) => (
-          <PostCard key={post._id} post={post} />
+          <PostCard key={post._meta.path} post={post} />
       ))}
     </div>
   );

@@ -9,6 +9,7 @@ import { selectLotsForSale, CostBasisMethod, type AvailableLot, type SelectedLot
 import type { Lot, User, BitcoinTransaction } from "@prisma/client";
 import { Prisma } from "@prisma/client";
 import { getDailyBtcUsdPrice } from '../price';
+import type { SaleResult as SaleResultType } from '../cost-basis';
 
 // Custom error for request-related issues (validation, etc.)
 export class BadRequestError extends Error {
@@ -59,6 +60,16 @@ interface ProcessTransactionBody {
 // Type guard for error objects
 function isError(value: unknown): value is Error {
   return value instanceof Error;
+}
+
+// Type guard for SaleResultType
+function isValidSaleResult(result: unknown): result is SaleResultType {
+  if (typeof result !== 'object' || result === null) return false;
+  const maybe = result as Record<string, unknown>;
+  return (
+    'selectedLots' in maybe && Array.isArray(maybe.selectedLots) &&
+    ('error' in maybe ? typeof maybe.error === 'string' || maybe.error === undefined : true)
+  );
 }
 
 // --- Refactored Logic for applying Lot/Allocation rules ---
@@ -112,6 +123,7 @@ async function _applyTransactionLogic(
       
       if (openLots.length === 0) {
           console.log(`Logic: No open lots available for user ${userId} to process SELL ${txId}.`);
+          throw new BadRequestError(`No open lots available for user ${userId} to process SELL ${txId}`);
       }
       
       const availableLots: AvailableLot[] = openLots.map((lot) => ({
@@ -132,12 +144,11 @@ async function _applyTransactionLogic(
           transactionData.price,
           saleDateMs
         );
-        if (saleResult.error) {
-            throw new Error(saleResult.error);
-        }
-         if (!saleResult.selectedLots || saleResult.selectedLots.length === 0) {
-             console.warn(`Logic: Lot selection for tx ${txId} resulted in no lots being selected.`);
-             throw new Error('Lot selection process failed to return selected lots.');
+        
+        if (!isValidSaleResult(saleResult)) {
+          const errorMessage = (saleResult as { error?: string }).error ?? 'Lot selection process failed to return selected lots';
+          console.warn(`Logic: Lot selection for tx ${txId} failed:`, errorMessage);
+          throw new LotSelectionError(errorMessage);
         }
 
       } catch (error: unknown) {
@@ -188,20 +199,23 @@ async function _applyTransactionLogic(
   else if (
     transactionData.type === "deposit" &&
     transactionData.amount &&
-    transactionData.asset === 'BTC' &&
+    // Assume BTC for now; add asset support if needed in the future
     transactionData.notes?.toLowerCase().includes('interest')
   ) {
     // Idempotency check: Check if Lot already exists for this transaction ID
     const existingLot = await db.lot.findFirst({ where: { txId: txId } });
     if (!existingLot) {
-      let price = transactionData.price;
-      if (typeof price !== 'number' || !price) {
-        price = await getDailyBtcUsdPrice(txTimestamp) ?? undefined;
+      let resolvedPrice: number | undefined = transactionData.price;
+      if (typeof resolvedPrice !== 'number' || !resolvedPrice) {
+        const fetchedPrice = await getDailyBtcUsdPrice(txTimestamp);
+        if (typeof fetchedPrice === 'number' && fetchedPrice) {
+          resolvedPrice = fetchedPrice;
+        } else {
+          console.warn(`Interest transaction ${txId} missing price, skipping lot creation.`);
+          return; // Or flag for review if needed
+        }
       }
-      if (typeof price !== 'number' || !price) {
-        console.warn(`Interest transaction ${txId} missing price, skipping lot creation.`);
-        return; // Or flag for review if needed
-      }
+      const finalPrice: number = resolvedPrice;
       try {
         await db.lot.create({
           data: {
@@ -209,7 +223,7 @@ async function _applyTransactionLogic(
             openedAt: txTimestamp,
             originalAmount: transactionData.amount,
             remainingQty: transactionData.amount,
-            costBasisUsd: transactionData.amount * price,
+            costBasisUsd: transactionData.amount * finalPrice,
           },
         });
         console.log(`Logic: Created Lot for INTEREST transaction ${txId}`);

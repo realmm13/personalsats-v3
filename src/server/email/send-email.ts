@@ -174,11 +174,9 @@ export const sendEmail = async (options: EmailOptions): Promise<void> => {
         throw new Error("Invalid email provider configuration");
     }
     console.log("[Email Router] Email processing completed successfully.");
-  } catch (error: any) {
-    console.error("[Email Router] Failed to send email:", error);
-    // Re-throw the error to be caught by the caller
-    throw new Error(
-      `Email sending failed via ${serverEnv.NEXT_PUBLIC_EMAIL_PROVIDER}: ${error.message || String(error)}`,
-    );
+  } catch (error: unknown) {
+    console.error('Error sending email:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to send email: ${errorMessage}`);
   }
 };

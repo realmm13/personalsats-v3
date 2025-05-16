@@ -25,14 +25,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/Spinner";
+import { toast } from "sonner";
 
 interface SettingsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-// Define type for mutation success data based on router definition
-type UserSettingsUpdateOutput = Awaited<ReturnType<AppRouter['userSettings']['update']['_def']['mutation']>>;
+// Define type for mutation success data based on trpc output type
+type UserSettingsUpdateOutput = { accountingMethod: CostBasisMethod };
 
 export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   // Use local state, seeded by the query
@@ -55,20 +56,21 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
 
   // Update mutation - Use 'api'
   const updateMutation = api.userSettings.update.useMutation({
-    onSuccess: (data: UserSettingsUpdateOutput) => { // Add explicit type for data
-      // Invalidate the get query to refetch fresh data next time dialog opens
+    onSuccess: (data: UserSettingsUpdateOutput) => {
       utils.userSettings.get.invalidate();
-      // Optionally update local state if needed immediately
-      // setSelectedMethod(data.accountingMethod); 
-      onOpenChange(false); // Close dialog on success
+      onOpenChange(false);
     },
-    onError: (error: TRPCClientErrorLike<AppRouter>) => { // Add explicit type for error
+    onError: (error: TRPCClientErrorLike<AppRouter>) => {
       console.error("Failed to update settings:", error.message);
-      // TODO: Show user-friendly error message (e.g., toast notification)
+      toast.error(error.message || "Failed to update settings");
     },
   });
 
   const handleSave = () => {
+    if (!selectedMethod) {
+      toast.error("Please select an accounting method");
+      return;
+    }
     updateMutation.mutate({ accountingMethod: selectedMethod });
   };
 
@@ -94,7 +96,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
               <Select
                 value={selectedMethod} // Use local state
                 onValueChange={(v) => setSelectedMethod(v as CostBasisMethod)}
-                disabled={isLoadingSettings || updateMutation.isLoading}
+                disabled={isLoadingSettings || updateMutation.isPending}
               >
                 <SelectTrigger id="cost-basis-method" className="col-span-3">
                   <SelectValue placeholder="Select method" />
@@ -115,9 +117,9 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
           <Button 
             type="button" 
             onClick={handleSave} 
-            disabled={updateMutation.isLoading || isLoadingSettings}
+            disabled={updateMutation.isPending || isLoadingSettings}
           >
-            {updateMutation.isLoading ? <Spinner size="sm" /> : "Save"}
+            {updateMutation.isPending ? <Spinner size="sm" /> : "Save"}
           </Button>
         </DialogFooter>
       </DialogContent>

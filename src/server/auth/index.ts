@@ -40,7 +40,7 @@ if (serverEnv.NEXT_PUBLIC_ENABLE_POLAR) {
 }
 
 interface SendVerificationEmailParams {
-  user: { id: string; email: string; [key: string]: any }; // Add known user properties
+  user: { id: string; email: string; [key: string]: unknown }; // Add known user properties
   token: string;
 }
 

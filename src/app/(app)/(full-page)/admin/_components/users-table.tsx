@@ -143,7 +143,7 @@ export default function UsersTable() {
                     <div className="h gap-2">
                       <ImpersonateUser
                         userId={user.id}
-                        currentUserId={currentUser?.id}
+                        currentUserId={currentUser?.user?.id}
                       />
                     </div>
                   </TableCell>

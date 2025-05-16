@@ -20,16 +20,17 @@ export interface FormFieldUploadThingImageProps<
 
 export function FormFieldUploadThingImage<
   TFieldValues extends FieldValues = FieldValues,
->({ endpoint, ...wrapperProps }: FormFieldUploadThingImageProps<TFieldValues>) {
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+>({ endpoint, ...wrapperProps }: FormFieldUploadThingImageProps<TFieldValues, TName>) {
   return (
-    <FormFieldWrapper<TFieldValues, any> {...wrapperProps}>
+    <FormFieldWrapper<TFieldValues, TName> {...wrapperProps}>
       {(field) => {
         const { setValue, trigger } = useFormContext<TFieldValues>();
         const currentImage = field.value as InitialImageType | null | undefined;
 
         const handleImageChange = (image: InitialImageType | null) => {
-          setValue(field.name, image as any, { shouldDirty: true });
-          trigger(field.name);
+          setValue(field.name as TName, image as FieldValues[keyof FieldValues], { shouldDirty: true });
+          trigger(field.name as TName);
         };
 
         return (

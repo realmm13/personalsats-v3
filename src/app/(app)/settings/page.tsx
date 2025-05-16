@@ -7,11 +7,13 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Spinner } from "@/components/Spinner";
+import { type TRPCClientErrorLike } from "@trpc/client";
+import { type AppRouter } from "@/server/api/root";
 
 export default function SettingsPage() {
   // Fetch only encryption phrase status
-  const { data, isLoading, error: loadingError } = api.userSettings.get.useQuery();
-  const updateSettings = api.userSettings.update.useMutation();
+  const { data, isLoading, error: loadingError } = api.user.getCurrentUser.useQuery();
+  const updateSettings = api.user.updateEncryptionSalt.useMutation();
 
   // Local state only for the NEW passphrase input
   const [newPassphrase, setNewPassphrase] = useState<string>("");
@@ -23,19 +25,20 @@ export default function SettingsPage() {
       return;
     }
 
-    const inputData = { encryptionPhrase: newPassphrase };
-
-    updateSettings.mutate(inputData, {
-      onSuccess: () => {
-        toast.success("Encryption Passphrase updated!");
-        setNewPassphrase("");
-        // Consider invalidating query if status text needs to update immediately
-        // api.useUtils().userSettings.get.invalidate();
-      },
-      onError: (err: Error) => {
-        toast.error(`Error saving passphrase: ${err.message}`);
-      },
-    });
+    updateSettings.mutate(
+      { encryptionSalt: newPassphrase },
+      {
+        onSuccess: () => {
+          toast.success("Encryption Passphrase updated!");
+          setNewPassphrase("");
+          // Consider invalidating query if status text needs to update immediately
+          api.useUtils().user.getCurrentUser.invalidate();
+        },
+        onError: (error: TRPCClientErrorLike<AppRouter>) => {
+          toast.error(`Error saving passphrase: ${error.message}`);
+        },
+      }
+    );
   };
 
   if (isLoading) return (
@@ -60,7 +63,7 @@ export default function SettingsPage() {
           value={newPassphrase}
           onChange={(e) => setNewPassphrase(e.currentTarget.value)}
         />
-        {data?.encryptionPhrase ? (
+        {data?.encryptionSalt ? (
           <p className="text-sm text-green-600">
             An encryption passphrase is currently set.
           </p>

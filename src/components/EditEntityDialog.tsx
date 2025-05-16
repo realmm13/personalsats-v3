@@ -2,24 +2,28 @@
 import React, { Suspense } from "react";
 import { Spinner } from "@/components/Spinner";
 
-export interface EditEntityDialogProps {
-  Component: React.ComponentType<any>;
-  onSubmit?: (data: any) => void;
-  props?: Record<string, any>;
-  close: () => void;
+interface EditEntityDialogProps<T extends Record<string, unknown>> {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit?: (data: T) => void;
+  initialData?: T;
+  title: string;
+  children: React.ReactNode;
 }
 
-export const EditEntityDialog: React.FC<EditEntityDialogProps> = ({
-  Component,
+export function EditEntityDialog<T extends Record<string, unknown>>({
+  isOpen,
+  onClose,
   onSubmit,
-  props = {},
-  close,
-}) => {
-  const handleSubmit = async (data: any) => {
+  initialData,
+  title,
+  children,
+}: EditEntityDialogProps<T>) {
+  const handleSubmit = async (data: T) => {
     if (onSubmit) {
       await onSubmit(data);
     }
-    close();
+    onClose();
   };
 
   return (
@@ -30,7 +34,7 @@ export const EditEntityDialog: React.FC<EditEntityDialogProps> = ({
         </div>
       }
     >
-      <Component {...props} onSubmit={handleSubmit} close={close} />
+      {children}
     </Suspense>
   );
-};
+}

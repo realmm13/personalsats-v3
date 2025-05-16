@@ -1,5 +1,6 @@
 import { createOpenAI } from "@ai-sdk/openai";
 import { streamText } from "ai";
+import { type Message } from "ai";
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -21,7 +22,7 @@ function errorHandler(error: unknown) {
 export async function POST(req: Request) {
   console.log("POST /api/chat called");
   try {
-    const { messages } = await req.json();
+    const { messages } = (await req.json()) as { messages: Message[] };
     console.log("Received messages:", messages);
 
     const apiKey = "";

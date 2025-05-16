@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { CustomButton } from "@/components/CustomButton";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { generateEncryptionKey } from "@/lib/encryption";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 interface PassphrasePromptProps {
   sampleEncryptedData?: string | null;
@@ -13,6 +15,7 @@ interface PassphrasePromptProps {
 
 export function PassphrasePrompt({ sampleEncryptedData }: PassphrasePromptProps) {
   const { setEncryptionKey, isLoadingKey, keyError } = useEncryption();
+  const { user } = useCurrentUser();
   const [passphrase, setPassphrase] = useState("");
   const [isTestingKey, setIsTestingKey] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -23,7 +26,11 @@ export function PassphrasePrompt({ sampleEncryptedData }: PassphrasePromptProps)
     setLocalError(null);
 
     try {
-      const potentialKey = await generateEncryptionKey(passphrase);
+      if (!user?.encryptionSalt) throw new Error("No encryption salt found for user.");
+      // Convert hex string to Uint8Array
+      const matches = user.encryptionSalt.match(/.{1,2}/g);
+      const salt = matches ? new Uint8Array(matches.map((byte: string) => parseInt(byte, 16))) : new Uint8Array();
+      const potentialKey = await generateEncryptionKey(passphrase, salt);
 
       console.log("Skipping test decryption, setting key directly...");
       setEncryptionKey(potentialKey);

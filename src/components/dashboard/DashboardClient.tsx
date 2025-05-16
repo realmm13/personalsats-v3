@@ -106,11 +106,11 @@ export function DashboardClient() {
   // -------------------------------
 
   const safePortfolio: PortfolioSummary = {
-    totalBTC: portfolio.totalBTC ?? 0, // Add nullish coalescing for safety
-    costBasis: portfolio.costBasis ?? 0,
-    currentValue: portfolio.currentValue ?? 0,
-    unrealizedPnL: portfolio.unrealizedPnL ?? 0,
-    percentageReturn: portfolio.percentageReturn ?? 0
+    totalBTC: typeof portfolio.totalBTC === 'number' ? portfolio.totalBTC : 0,
+    costBasis: typeof portfolio.costBasis === 'number' ? portfolio.costBasis : 0,
+    currentValue: typeof portfolio.currentValue === 'number' ? portfolio.currentValue : 0,
+    unrealizedPnL: typeof portfolio.unrealizedPnL === 'number' ? portfolio.unrealizedPnL : 0,
+    percentageReturn: typeof portfolio.percentageReturn === 'number' ? portfolio.percentageReturn : 0
   };
 
   const handleAddTransaction = () => {

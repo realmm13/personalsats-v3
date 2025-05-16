@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from "next/link";
 import { api } from "@/trpc/react";
 import { CostBasisMethod } from "@/lib/cost-basis";
@@ -57,14 +57,15 @@ function TaxPageContent() {
   // isLoadingCombined now only needs to check query loading states
   const isLoadingCombined = isLoadingSettings || isLoadingReport || isLoadingPrice;
 
-  useEffect(() => {
-    // Add a check to ensure refetch isn't called unnecessarily before data is ready
+  const memoizedRefetch = useCallback(() => {
     if (selectedMethod && currentBtcPrice && !isLoadingCombined) {
-       refetch();
+      refetch();
     }
-   // Ensure refetch is stable or manage its inclusion carefully
-  }, [selectedYear, selectedMethod, currentBtcPrice, isLoadingCombined, refetch]);
+  }, [selectedMethod, currentBtcPrice, isLoadingCombined, refetch]);
 
+  useEffect(() => {
+    memoizedRefetch();
+  }, [selectedYear, selectedMethod, currentBtcPrice, isLoadingCombined, memoizedRefetch]);
 
   const handleSettings = () => {
     setIsSettingsOpen(true);

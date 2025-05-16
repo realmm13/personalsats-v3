@@ -109,12 +109,9 @@ export const sendEmailResend = async ({
       console.log(`[Resend] Single email sent. Response ID: ${result.data.id}`);
       return result;
     }
-  } catch (error: any) {
-    console.error("[Resend] Error sending email via Resend:", error);
-    if (error instanceof Error) {
-      throw error;
-    } else {
-      throw new Error(String(error) || "Unknown Resend SDK error");
-    }
+  } catch (error: unknown) {
+    console.error('Error sending email via Resend:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to send email via Resend: ${errorMessage}`);
   }
 };

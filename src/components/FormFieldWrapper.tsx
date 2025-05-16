@@ -26,7 +26,7 @@ export interface FormFieldWrapperProps<
   description?: React.ReactNode;
   className?: string;
   required?: boolean;
-  defaultValue?: any; // Consider making this more specific if needed
+  defaultValue?: TFieldValues[TName];
   children: (
     field: ControllerRenderProps<TFieldValues, TName>,
   ) => React.ReactNode;

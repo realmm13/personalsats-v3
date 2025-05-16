@@ -50,7 +50,7 @@ export function CommandPalette() {
   const { openUpgradeDialog } = useUpgradeToProDialog();
   const { logout } = useLogout();
 
-  const user = useCurrentUser();
+  const { user } = useCurrentUser();
   const { data: userSession } = authClient.useSession();
   const { isPro } = useUserBillingStatus({ enabled: !!userSession });
 

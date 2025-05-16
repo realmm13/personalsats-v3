@@ -26,7 +26,7 @@ interface AppHeaderUserProps {
 }
 
 export function AppHeaderUser({ links }: AppHeaderUserProps) {
-  const realUser = useCurrentUser();
+  const { user } = useCurrentUser();
   const { data: userSession, isPending } = authClient.useSession();
   const { isPro } = useUserBillingStatus({ enabled: !!userSession });
   const { isMobile } = useKitzeUI();
@@ -129,7 +129,7 @@ export function AppHeaderUser({ links }: AppHeaderUserProps) {
           <SimpleDropdownMenu
             mobileView="bottom-drawer"
             content={<HeaderUserDropdownMenu links={enabledLinks} />}
-            key={`${realUser?.profilePic ?? "no-pic"}-${realUser?.name ?? "no-name"}`}
+            key={`${user?.profilePic ?? "no-pic"}-${user?.name ?? "no-name"}`}
           >
             <div className="relative">
               <SimpleTooltip
@@ -138,15 +138,15 @@ export function AppHeaderUser({ links }: AppHeaderUserProps) {
                 }
               >
                 <Avatar className="cursor-pointer">
-                  {realUser?.profilePic && (
+                  {user?.profilePic && (
                     <AvatarImage
                       className="object-cover"
-                      src={realUser.profilePic}
+                      src={user.profilePic}
                       alt="User Avatar"
                     />
                   )}
                   <AvatarFallback className="bg-gray-300 select-none dark:bg-gray-700">
-                    {realUser?.name?.charAt(0) || "U"}
+                    {user?.name?.charAt(0) || "U"}
                   </AvatarFallback>
                 </Avatar>
               </SimpleTooltip>

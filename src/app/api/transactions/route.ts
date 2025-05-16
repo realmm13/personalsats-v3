@@ -63,16 +63,29 @@ export async function GET(request: Request) {
     });
 
     return NextResponse.json(transactions);
-  } catch (err: any) {
+  } catch (error: unknown) {
     // Log the error for debugging
-    console.error("Error in /api/transactions GET:", err);
+    console.error("Error in /api/transactions GET:", error);
 
     // Return the error message in the response for easier debugging
+    const errorMessage = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { error: "Failed to fetch transactions.", details: err?.message || err },
+      { error: "Failed to fetch transactions.", details: errorMessage },
       { status: 500 }
     );
   }
+}
+
+interface TransactionPayload {
+  encryptedData: string;
+  type: string;
+  amount: number;
+  price: number;
+  fee: number;
+  timestamp: string;
+  wallet: string;
+  tags: string[];
+  notes: string;
 }
 
 export async function POST(req: Request) {
@@ -82,7 +95,7 @@ export async function POST(req: Request) {
     if (!session || !session.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    const body = await req.json();
+    const body = await req.json() as TransactionPayload;
     console.log('POST /api/transactions payload:', body);
 
     // Expecting encryptedData and all clear fields
@@ -126,10 +139,11 @@ export async function POST(req: Request) {
     // (If your processTransaction expects the clear fields, call it here)
 
     return NextResponse.json(record);
-  } catch (err: any) {
-    console.error('Error in POST /api/transactions:', err);
+  } catch (error: unknown) {
+    console.error('Error in POST /api/transactions:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { error: (err as Error).message },
+      { error: errorMessage },
       { status: 500 }
     );
   }

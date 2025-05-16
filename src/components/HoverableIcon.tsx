@@ -22,6 +22,11 @@ export const iconSizes: Record<Size, number> = {
   xl: 28,
 };
 
+interface ElementAttributes extends React.HTMLAttributes<HTMLElement> {
+  'data-testid'?: string;
+  'aria-label'?: string;
+}
+
 export interface HoverableIconProps {
   Icon: LucideIcon;
   href?: string;
@@ -57,7 +62,7 @@ export const HoverableIcon: ReactFC<HoverableIconProps> = ({
   );
 
   // Setup attributes based on component type
-  const elementAttributes: any = {
+  const elementAttributes: ElementAttributes = {
     className: elementClassName,
     ...linkProps,
   };

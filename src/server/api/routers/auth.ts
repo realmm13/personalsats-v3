@@ -59,16 +59,10 @@ export const authRouter = createTRPCRouter({
         });
 
         return { success: true };
-      } catch (error: any) {
-        if (error instanceof TRPCError) {
-          throw error;
-        }
-
-        console.error("Error updating password:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to update password",
-        });
+      } catch (error: unknown) {
+        console.error('Error in auth router:', error);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        throw new Error(`Auth router error: ${errorMessage}`);
       }
     }),
 });

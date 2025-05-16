@@ -194,6 +194,11 @@ type ColorMap = {
   [key: string]: ColorValue;
 };
 
+interface ButtonAttributes extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  'data-testid'?: string;
+  'aria-label'?: string;
+}
+
 export const CustomButton: ReactFC<CustomButtonProps> = ({
   className,
   variant = "filled",
@@ -283,7 +288,7 @@ export const CustomButton: ReactFC<CustomButtonProps> = ({
   );
 
   // Setup attributes based on the component type
-  const buttonAttributes: any = {
+  const buttonAttributes: ButtonAttributes = {
     className: buttonVariants({
       variant,
       size,

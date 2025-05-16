@@ -24,9 +24,15 @@ type GlobalStore = {
   toggleCommandPalette: () => void;
 };
 
-const GlobalStoreContext = createContext<GlobalStore>({} as any);
+const GlobalStoreContext = createContext<GlobalStore | undefined>(undefined);
 
-export const useGlobalStore = () => useContext(GlobalStoreContext);
+export const useGlobalStore = () => {
+  const context = useContext(GlobalStoreContext);
+  if (!context) {
+    throw new Error('useGlobalStore must be used within a GlobalStoreProvider');
+  }
+  return context;
+};
 
 export function GlobalStoreProvider({
   children,

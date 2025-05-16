@@ -17,6 +17,7 @@ export interface Transaction {
   notes?: string | null;
   exchangeTxId?: string | null;
   encryptedData?: string; // Client-side encrypted blob
+  decryptionError?: boolean;
 }
 
 export interface CurrentUser {

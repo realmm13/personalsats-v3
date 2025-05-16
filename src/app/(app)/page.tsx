@@ -37,6 +37,8 @@ export default function AppPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
+
     async function fetchData() {
       try {
         const [statsRes, historyRes, tradesRes] = await Promise.all([
@@ -44,6 +46,8 @@ export default function AppPage() {
           fetch('/api/portfolio/history'),
           fetch('/api/portfolio/trades')
         ]);
+
+        if (!isMounted) return;
 
         if (!statsRes.ok || !historyRes.ok || !tradesRes.ok) {
           throw new Error('Failed to fetch portfolio data');
@@ -55,15 +59,22 @@ export default function AppPage() {
           tradesRes.json()
         ]);
 
+        if (!isMounted) return;
+
         setStats(statsData);
         setHistory(historyData);
         setTrades(tradesData);
       } catch (err) {
+        if (!isMounted) return;
         setError(err instanceof Error ? err.message : 'An error occurred');
       }
     }
 
-    fetchData();
+    void fetchData();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   if (error) {

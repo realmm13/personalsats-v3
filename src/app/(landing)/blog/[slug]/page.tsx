@@ -73,7 +73,7 @@ export default async function PostPage({ params }: PromisePostPageProps) {
             <>
               <span>•</span>
               <div className="flex flex-wrap gap-2">
-                {post.tags.map((tag) => (
+                {post.tags.map((tag: string) => (
                   <span
                     key={tag}
                     className="bg-muted rounded-md px-2 py-1 text-xs"
@@ -114,7 +114,7 @@ export default async function PostPage({ params }: PromisePostPageProps) {
       )}
 
       <div className="prose dark:prose-invert mt-12 max-w-none">
-        <Mdx code={post.mdx} />
+        <Mdx code={post.mdx ?? ""} />
       </div>
 
       <hr className="border-border/50 my-12" />

@@ -8,7 +8,11 @@ interface CryptoCompareResponse {
   Message: string;
   HasWarning: boolean;
   Type: number;
-  RateLimit: any;
+  RateLimit: {
+    callsLeft: number;
+    callsMade: number;
+    timeLeft: number;
+  };
   Data: {
     Aggregated: boolean;
     TimeFrom: number;

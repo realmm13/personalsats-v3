@@ -41,7 +41,11 @@ export function calculatePortfolioSummary(transactions: Transaction[] = [], curr
   const processedTransactions = transactions.map(parseTransactionDate);
 
   // Now it's safe to spread
-  const sortedTransactions = [...processedTransactions].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+  const sortedTransactions = [...processedTransactions].sort((a, b) => {
+    const aTime = a.timestamp instanceof Date ? a.timestamp.getTime() : new Date(a.timestamp).getTime();
+    const bTime = b.timestamp instanceof Date ? b.timestamp.getTime() : new Date(b.timestamp).getTime();
+    return aTime - bTime;
+  });
   
   // Track lots for cost basis
   let lots: Lot[] = [];
@@ -50,31 +54,33 @@ export function calculatePortfolioSummary(transactions: Transaction[] = [], curr
   // Process transactions to track remaining lots
   for (const tx of sortedTransactions) {
     if (tx.type === 'buy') {
+      const amount = tx.amount ?? 0;
+      const price = tx.price ?? 0;
       lots.push({
         id: `LOT-${lotCounter++}`,
-        amount: tx.amount,
-        remaining: tx.amount,
-        price: tx.price
+        amount,
+        remaining: amount,
+        price
       });
     } else if (tx.type === 'sell') {
       // Use FIFO to reduce lots
-      let remainingToSell = tx.amount;
+      let remainingToSell = tx.amount ?? 0;
       for (const lot of lots) {
         if (remainingToSell <= 0) break;
-        
-        const amountFromLot = Math.min(lot.remaining, remainingToSell);
-        lot.remaining -= amountFromLot;
+        const lotRemaining = lot.remaining ?? 0;
+        const amountFromLot = Math.min(lotRemaining, remainingToSell);
+        lot.remaining = lotRemaining - amountFromLot;
         remainingToSell -= amountFromLot;
       }
       // Remove fully used lots
-      lots = lots.filter(lot => lot.remaining > 0);
+      lots = lots.filter(lot => (lot.remaining ?? 0) > 0);
     }
   }
 
   // Calculate totals from remaining lots
   const summary = lots.reduce((acc, lot) => ({
-    totalBTC: acc.totalBTC + lot.remaining,
-    costBasis: acc.costBasis + (lot.remaining * lot.price)
+    totalBTC: acc.totalBTC + (lot.remaining ?? 0),
+    costBasis: acc.costBasis + ((lot.remaining ?? 0) * (lot.price ?? 0))
   }), {
     totalBTC: 0,
     costBasis: 0
@@ -101,7 +107,11 @@ export function getRecentTransactions(transactions: Transaction[] = [], limit = 
   const processedTransactions = transactions.map(parseTransactionDate);
 
   return [...processedTransactions]
-    .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+    .sort((a, b) => {
+      const aTime = a.timestamp instanceof Date ? a.timestamp.getTime() : new Date(a.timestamp).getTime();
+      const bTime = b.timestamp instanceof Date ? b.timestamp.getTime() : new Date(b.timestamp).getTime();
+      return bTime - aTime;
+    })
     .slice(0, limit);
 }
 
@@ -114,30 +124,38 @@ export function calculateRealizedGains(transactions: Transaction[] = []): number
   // Convert timestamps to Date objects before sorting
   const processedTransactions = transactions.map(parseTransactionDate);
   
-  const sortedTransactions = [...processedTransactions].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+  const sortedTransactions = [...processedTransactions].sort((a, b) => {
+    const aTime = a.timestamp instanceof Date ? a.timestamp.getTime() : new Date(a.timestamp).getTime();
+    const bTime = b.timestamp instanceof Date ? b.timestamp.getTime() : new Date(b.timestamp).getTime();
+    return aTime - bTime;
+  });
   let lots: Lot[] = [];
   let lotCounter = 1;
   let realizedGains = 0;
 
   for (const tx of sortedTransactions) {
     if (tx.type === 'buy') {
+      const amount = tx.amount ?? 0;
+      const price = tx.price ?? 0;
       lots.push({
         id: `LOT-${lotCounter++}`,
-        amount: tx.amount,
-        remaining: tx.amount,
-        price: tx.price
+        amount,
+        remaining: amount,
+        price
       });
     } else if (tx.type === 'sell') {
-      let remainingToSell = tx.amount;
+      let remainingToSell = tx.amount ?? 0;
       for (const lot of lots) {
         if (remainingToSell <= 0) break;
-        
-        const amountFromLot = Math.min(lot.remaining, remainingToSell);
-        realizedGains += amountFromLot * (tx.price - lot.price);
-        lot.remaining -= amountFromLot;
+        const lotRemaining = lot.remaining ?? 0;
+        const lotPrice = lot.price ?? 0;
+        const txPrice = tx.price ?? 0;
+        const amountFromLot = Math.min(lotRemaining, remainingToSell);
+        realizedGains += amountFromLot * (txPrice - lotPrice);
+        lot.remaining = lotRemaining - amountFromLot;
         remainingToSell -= amountFromLot;
       }
-      lots = lots.filter(lot => lot.remaining > 0);
+      lots = lots.filter(lot => (lot.remaining ?? 0) > 0);
     }
   }
 

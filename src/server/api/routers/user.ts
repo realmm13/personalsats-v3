@@ -11,6 +11,7 @@ import {
   getEnhancedUser,
   getUploadThingImageConnectDisconnectArgs,
 } from "@/server/db/utils";
+import { z } from "zod";
 
 export const userRouter = createTRPCRouter({
   getCurrentUser: protectedProcedure.query(async ({ ctx }) => {
@@ -208,4 +209,16 @@ export const userRouter = createTRPCRouter({
     });
     return { success: true };
   }),
+
+  updateEncryptionSalt: protectedProcedure
+    .input(z.object({
+      encryptionSalt: z.string(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db.user.update({
+        where: { id: ctx.session.user.id },
+        data: { encryptionSalt: input.encryptionSalt },
+      });
+      return { success: true };
+    }),
 });

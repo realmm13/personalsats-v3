@@ -16,19 +16,34 @@ export default function PassphraseModal() {
   const handleSubmit = async (event?: React.FormEvent<HTMLFormElement>) => {
     event?.preventDefault();
     if (isLoading) return;
-    setIsLoading(true);
-    setError('');
+    
+    try {
+      setIsLoading(true);
+      setError('');
 
-    console.log('[PassphraseModal] Attempting unlock with passphrase:', input);
-    const success = await unlock(input);
-    console.log('[PassphraseModal] unlock result:', success);
-    if (!success) {
-      setError('Incorrect passphrase. Please try again.');
-      toast.error("Incorrect passphrase.");
-    } else {
-      setInput('');
+      if (!input.trim()) {
+        setError('Passphrase cannot be empty');
+        toast.error("Passphrase cannot be empty");
+        return;
+      }
+
+      console.log('[PassphraseModal] Attempting unlock with passphrase:', input);
+      const success = await unlock(input);
+      console.log('[PassphraseModal] unlock result:', success);
+      
+      if (!success) {
+        setError('Incorrect passphrase. Please try again.');
+        toast.error("Incorrect passphrase.");
+      } else {
+        setInput('');
+      }
+    } catch (error) {
+      console.error('[PassphraseModal] Error during unlock:', error);
+      setError('An unexpected error occurred. Please try again.');
+      toast.error("An unexpected error occurred");
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   return (
