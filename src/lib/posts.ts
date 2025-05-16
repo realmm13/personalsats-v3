@@ -15,7 +15,7 @@ export interface Post {
   mdx?: string;
 }
 
-const postsDir = path.join(process.cwd(), 'posts');
+const postsDir = path.join(process.cwd(), 'content/posts');
 
 export function getAllPosts(): Post[] {
   return fs
