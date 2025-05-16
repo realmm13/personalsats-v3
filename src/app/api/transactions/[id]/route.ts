@@ -13,7 +13,7 @@ async function getKey() {
 }
 
 export async function GET(req: NextRequest, context: { params: { id: string } }) {
-  const { params } = context;
+  const id = context.params.id;
   try {
     const session = await auth.api.getSession({ headers: req.headers });
     if (!session?.user?.id) {
@@ -23,7 +23,7 @@ export async function GET(req: NextRequest, context: { params: { id: string } })
     // Only select decrypted fields
     const transaction = await db.bitcoinTransaction.findUnique({
       where: {
-        id: params.id,
+        id,
         userId: session.user.id, // Ensure user owns the transaction
       },
       select: {
@@ -64,7 +64,7 @@ export async function GET(req: NextRequest, context: { params: { id: string } })
 }
 
 export async function DELETE(req: NextRequest, context: { params: { id: string } }) {
-  const { params } = context;
+  const id = context.params.id;
   try {
     const session = await auth.api.getSession({ headers: req.headers });
     if (!session?.user?.id) {
@@ -73,7 +73,7 @@ export async function DELETE(req: NextRequest, context: { params: { id: string }
 
     // Verify ownership before deleting
     const transaction = await db.bitcoinTransaction.findUnique({
-        where: { id: params.id },
+        where: { id },
         select: { userId: true } 
     });
 
@@ -87,7 +87,7 @@ export async function DELETE(req: NextRequest, context: { params: { id: string }
 
     await db.bitcoinTransaction.delete({
       where: {
-        id: params.id,
+        id,
         // No need for userId here again, we already checked ownership
       },
     });
@@ -106,7 +106,7 @@ interface UpdateTransactionBody {
 }
 
 export async function PUT(req: NextRequest, context: { params: { id: string } }) {
-  const { params } = context;
+  const id = context.params.id;
   try {
     const session = await auth.api.getSession({ headers: req.headers });
     if (!session?.user?.id) {
@@ -122,7 +122,7 @@ export async function PUT(req: NextRequest, context: { params: { id: string } })
     
     // Verify ownership before updating
     const transaction = await db.bitcoinTransaction.findUnique({
-        where: { id: params.id },
+        where: { id },
         select: { userId: true } 
     });
 
@@ -154,7 +154,7 @@ export async function PUT(req: NextRequest, context: { params: { id: string } })
 
     const updatedTransaction = await db.bitcoinTransaction.update({
       where: {
-        id: params.id,
+        id,
       },
       data: dataToStore,
     });
