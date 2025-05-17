@@ -28,7 +28,8 @@
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest watch",
-    "typecheck:api": "tsc --project tsconfig.api.json --noEmit"
+    "typecheck:api": "tsc --project tsconfig.api.json --noEmit",
+    "vercel:postbuild": "prisma migrate deploy"
   },
   "dependencies": {
     "@ai-sdk/openai": "^1.3.9",
