@@ -9,6 +9,8 @@ import { Spinner } from "@/components/Spinner";
 import { Badge } from "@/components/ui/badge";
 import { BarChart3, Users, CreditCard, Clock, PlusIcon, Upload, ReceiptText } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 interface Stats {
   totalValue: number;
@@ -29,6 +31,23 @@ interface HistoryPoint {
 }
 
 export default function AppPage() {
+  const router = useRouter();
+  const { user, isLoading } = useCurrentUser();
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push("/signin");
+    }
+  }, [isLoading, user, router]);
+
+  if (isLoading || !user) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
   console.log("🔥 Rendering src/app/(app)/page.tsx 🔥"); // Canary console log
 
   const [stats, setStats] = useState<Stats | null>(null);
