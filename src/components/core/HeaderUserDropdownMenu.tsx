@@ -31,7 +31,7 @@ export function HeaderUserDropdownMenu({ links }: HeaderUserDropdownMenuProps) {
   const { openDialog } = useDialog();
   const { openUpgradeDialog } = useUpgradeToProDialog();
   const { user } = useCurrentUser();
-  const { data: userSession } = authClient.useSession();
+  const { data: userSession } = authClient.useSession?.() ?? {};
   const { isPro } = useUserBillingStatus({ enabled: !!userSession });
   const { isImpersonating, impersonatedUserName } = useIsImpersonating();
 

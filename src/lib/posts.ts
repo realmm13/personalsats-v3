@@ -25,7 +25,7 @@ export function getAllPosts(): Post[] {
       const source = fs.readFileSync(path.join(postsDir, fileName), 'utf8');
       const { data, content } = matter(source);
       return {
-        _meta: { path: `/posts/${fileName.replace(/\.mdx?$/, '')}` },
+        _meta: { path: `/content/posts/${fileName.replace(/\.mdx?$/, '')}` },
         title: data.title,
         description: data.description,
         date: data.date,

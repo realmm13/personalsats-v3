@@ -8,8 +8,8 @@ import Link from "next/link";
 
 export function AdminStatus() {
   const { data: sessionData, isPending: isSessionPending } =
-    authClient.useSession();
-  const role = sessionData?.user.role;
+    authClient.useSession?.() ?? {};
+  const role = sessionData?.user?.role;
   const isAdmin = role === "admin";
   const [isStoppingImpersonation, setIsStoppingImpersonation] = useState(false);
 
@@ -28,7 +28,7 @@ export function AdminStatus() {
   const isLoading = isSessionPending;
   if (isLoading) return null;
 
-  const isImpersonating = !!sessionData?.session.impersonatedBy;
+  const isImpersonating = !!sessionData?.session?.impersonatedBy;
 
   const showControls = isAdmin || isImpersonating;
 

@@ -27,7 +27,7 @@ interface AppHeaderUserProps {
 
 export function AppHeaderUser({ links }: AppHeaderUserProps) {
   const { user } = useCurrentUser();
-  const { data: userSession, isPending } = authClient.useSession();
+  const { data: userSession, isPending } = authClient.useSession?.() ?? {};
   const { isPro } = useUserBillingStatus({ enabled: !!userSession });
   const { isMobile } = useKitzeUI();
   const { isImpersonating, impersonatedUserName } = useIsImpersonating();

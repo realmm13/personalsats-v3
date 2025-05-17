@@ -1,0 +1,159 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  // directUrl = env("DIRECT_URL") //uncomment for supabase
+}
+
+model User {
+  id            String    @id @default(cuid())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime? @updatedAt
+  name          String
+  email         String    @unique
+  emailVerified Boolean
+  image         String?
+  bio           String?
+
+  // images → direct URL uploads
+  avatarImageUrl String?
+  coverImageUrl  String?
+
+  // images → UploadThing keys
+  avatarImageUTKey String?
+  coverImageUTKey  String?
+
+  // images → DB relations
+  avatarImageId  String?   @unique
+  avatarImage    UTImage?  @relation("AvatarImage", fields: [avatarImageId], references: [id], onDelete: SetNull)
+  coverImageId   String?   @unique
+  coverImage     UTImage?  @relation("CoverImage", fields: [coverImageId], references: [id], onDelete: SetNull)
+  uploadedImages UTImage[] @relation("UploadedImages") // Relation for all uploaded images by user
+
+  timezone String? @default("Etc/GMT")
+
+  preferences Json? @default("{}")
+
+  sessions Session[]
+  accounts Account[]
+
+  // better-auth-admin
+  role       String    @default("user")
+  banReason  String?
+  banExpires DateTime?
+  banned     Boolean   @default(false)
+
+  // better-auth-username
+  username        String?
+  displayUsername String?
+
+  onboarded Boolean @default(false)
+
+  bitcoinTransactions BitcoinTransaction[]
+
+  @@unique([username])
+  @@map("users")
+}
+
+model Session {
+  id             String    @id
+  expiresAt      DateTime
+  token          String    @unique
+  createdAt      DateTime
+  updatedAt      DateTime? @updatedAt
+  ipAddress      String?
+  userAgent      String?
+  userId         String
+  user           User      @relation(fields: [userId], references: [id])
+  impersonatedBy String?
+
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  type                  String?
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id])
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime
+  updatedAt             DateTime? @updatedAt
+
+  @@map("accounts")
+}
+
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime? @updatedAt
+
+  @@map("verifications")
+}
+
+model UTImage {
+  id        String   @id @default(cuid())
+  key       String   @unique // The key returned by UploadThing
+  userId    String
+  user      User     @relation("UploadedImages", fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  usedAsAvatarByUser User? @relation("AvatarImage")
+  usedAsCoverByUser  User? @relation("CoverImage")
+
+  @@index([userId])
+  @@map("ut_images")
+}
+
+model BitcoinTransaction {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Core Transaction Details (potentially inside encryptedData)
+  timestamp    DateTime // Required: When the transaction happened. Also stored unencrypted for sorting/querying.
+  type         String? // 'buy' or 'sell'. Optional in DB schema as it's inside the blob.
+  amount       Float? // Amount of the primary asset. Optional in DB schema.
+  asset        String   @default("BTC")
+  price        Float? // Price per unit of primary asset. Optional in DB schema.
+  priceAsset   String?  @default("USD")
+  fee          Float? // Fee amount. Optional in DB schema.
+  feeAsset     String? // Asset the fee was paid in (e.g., "USD", "BTC"). Optional in DB schema.
+  wallet       String? // Wallet/Exchange name. Optional in DB schema.
+  counterparty String? // Optional: P2P peer, specific exchange details, etc.
+  tags         String[] // User-defined tags (remains unencrypted for filtering).
+  notes        String? // Optional notes. Optional in DB schema.
+  exchangeTxId String? // Optional: Original transaction ID from the exchange/source.
+
+  // Encryption & Timestamps
+  encryptedData String?  @db.Text // Stores the encrypted blob of sensitive fields (type, amount, price, fee, wallet, notes etc.)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  // @@map("bitcoin_transactions") // Assuming no explicit map or it matches this name
+
+  @@index([userId, timestamp]) // Index for common queries by user and date.
+}
+
+// --- Model for Historical Prices ---
+model PriceHistory {
+  timestamp DateTime @id // Use timestamp as the unique ID
+  priceUsd  Float // Store the USD price at that time
+
+  @@map("price_history") // Optional: define a table name
+}
+
+// --- End PriceHistory Model ---

@@ -17,7 +17,7 @@ export function PostCard({ post }: PostCardProps) {
   return (
     <article className="group relative flex flex-col space-y-3">
       {post.image && (
-        <Link href={`/blog/${post._meta.path}`}>
+        <Link href={`/blog/${post._meta.path.replace('/content/posts/', '')}`}>
           <ViewTransition name={imageTransitionName}>
             <img
               src={post.image}
@@ -30,7 +30,7 @@ export function PostCard({ post }: PostCardProps) {
       )}
       <ViewTransition name={titleTransitionName}>
         <h2 className="text-xl font-semibold tracking-tight">
-          <Link href={`/blog/${post._meta.path}`}>{post.title}</Link>
+          <Link href={`/blog/${post._meta.path.replace('/content/posts/', '')}`}>{post.title}</Link>
         </h2>
       </ViewTransition>
       {post.description && (

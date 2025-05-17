@@ -48,6 +48,7 @@ export default function SettingsPage() {
     </div>
   );
   if (loadingError) return <div className="p-6 text-red-500">Error loading settings status: {loadingError.message}</div>;
+  if (!data) return <div className="p-6 text-red-500">User data not found. Please sign in again.</div>;
 
   return (
     <div className="max-w-md space-y-6 p-6">

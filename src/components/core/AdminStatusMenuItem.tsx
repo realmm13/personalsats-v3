@@ -5,9 +5,9 @@ import { authClient } from "@/server/auth/client";
 import { useIsImpersonating } from "@/hooks/useIsImpersonating";
 
 export function AdminStatusMenuItem() {
-  const { data: sessionData } = authClient.useSession();
+  const { data: sessionData } = authClient.useSession?.() ?? {};
   const { isImpersonating } = useIsImpersonating();
-  const isAdmin = sessionData?.user.role === "admin";
+  const isAdmin = sessionData?.user?.role === "admin";
   const [isStoppingImpersonation, setIsStoppingImpersonation] = useState(false);
 
   const stopImpersonating = async () => {

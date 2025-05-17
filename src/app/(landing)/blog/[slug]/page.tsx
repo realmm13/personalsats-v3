@@ -37,13 +37,13 @@ export async function generateStaticParams(): Promise<
   const posts = getAllPosts();
 
   return posts.map((post) => ({
-    slug: post._meta.path,
+    slug: post._meta.path.replace('/content/posts/', ''),
   }));
 }
 
 export default async function PostPage({ params }: PromisePostPageProps) {
   const { slug } = await params;
-  const post: Post | undefined = getPostBySlug(slug);
+  const post: Post | undefined = getPostBySlug(`/content/posts/${slug}`);
 
   if (!post) {
     notFound();

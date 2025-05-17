@@ -9,7 +9,7 @@ export default function AuthLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = authClient.useSession();
+  const session = authClient.useSession?.() ?? {};
   const router = useRouter();
 
   useEffect(() => {

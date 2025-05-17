@@ -51,7 +51,7 @@ export function CommandPalette() {
   const { logout } = useLogout();
 
   const { user } = useCurrentUser();
-  const { data: userSession } = authClient.useSession();
+  const { data: userSession } = authClient.useSession?.() ?? {};
   const { isPro } = useUserBillingStatus({ enabled: !!userSession });
 
   const isAdmin = user?.isAdmin;

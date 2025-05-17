@@ -257,7 +257,7 @@ function TaxPageContent() {
 
 export default function TaxPage() {
   // Use session hook from the configured client
-  const { data: session, isPending: isSessionLoading } = authClient.useSession();
+  const { data: session, isPending: isSessionLoading } = authClient.useSession?.() ?? {};
   const isAuthenticated = !!session?.user; // Check if user exists in session data
   const router = useRouter(); // Get router instance
 
