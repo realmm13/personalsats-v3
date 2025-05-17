@@ -16,7 +16,7 @@ import { PlanCard, type PlanCardProps } from "./PlanCard";
 export default function PricingPlans() {
   const { isMobile } = useKitzeUI();
   const plans = getActivePaymentPlans();
-  const { data: session } = authClient.useSession();
+  const { data: session } = authClient.useSession?.() ?? {};
   const isAuthenticated = !!session;
 
   const monthlyPlan = plans.find(
