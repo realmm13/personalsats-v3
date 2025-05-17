@@ -7,11 +7,18 @@ import { toast } from "sonner";
 import confetti from "canvas-confetti";
 import { useRouter } from "next/navigation";
 import { clientEnv } from "@/env/client";
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 export default function SignupPage() {
+  const { user } = useCurrentUser();
+  const router = useRouter();
   const [pending, setPending] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const router = useRouter();
+
+  if (user) {
+    router.push('/');
+    return null;
+  }
 
   const handleSignup = async (values: SignUpSchemaType) => {
     await authClient.signUp.email(

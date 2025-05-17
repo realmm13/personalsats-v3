@@ -62,10 +62,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { isImpersonating } = useIsImpersonating();
   const showOnboarding = user && !user.onboarded && !isImpersonating;
 
-  if (isLoading) return <Spinner />;
-  if (isError) return <div className="text-center text-red-500">Error loading user.</div>;
-  if (!user) return <div className="text-center"><CustomButton>Sign In</CustomButton></div>;
-
   return (
     <>
       {/* global hotkeys that apply only when user is logged in */}
@@ -73,6 +69,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <CommandPalette />
       {showOnboarding && <BeautifulOnboarder steps={onboardingSteps} />}
       <AppHeader />
+      {!user && <div className="text-center"><CustomButton>Sign In</CustomButton></div>}
       <main>{children}</main>
     </>
   );
