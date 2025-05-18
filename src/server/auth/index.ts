@@ -239,9 +239,8 @@ export const auth = betterAuth({
   },
   // Restore better-auth's specific email/password handler
   emailAndPassword: {
-    enabled: serverEnv.NEXT_PUBLIC_AUTH_ENABLE_EMAIL_PASSWORD_AUTHENTICATION,
-    requireEmailVerification:
-      serverEnv.NEXT_PUBLIC_AUTH_ENABLE_EMAIL_VERIFICATION,
+    enabled: !!serverEnv.NEXT_PUBLIC_AUTH_ENABLE_EMAIL_PASSWORD_AUTHENTICATION,
+    requireEmailVerification: !!serverEnv.NEXT_PUBLIC_AUTH_ENABLE_EMAIL_VERIFICATION,
     autoSignIn: !serverEnv.NEXT_PUBLIC_AUTH_ENABLE_EMAIL_VERIFICATION,
     sendResetPassword: async ({ user, url }) => {
       try {
@@ -276,4 +275,3 @@ export const getServerSession = cache(
 );
 
 export type Session = typeof auth.$Infer.Session;
-export type AuthUserType = Session["user"];

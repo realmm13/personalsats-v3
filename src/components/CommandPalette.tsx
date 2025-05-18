@@ -27,7 +27,7 @@ import { EditEntityDialog } from "@/components/EditEntityDialog";
 import EditProfileFormWithData from "@/components/forms/EditProfileForm/EditProfileFormWithData";
 import { useSettingsDialog } from "@/hooks/useSettingsDialog";
 import { useTheme } from "next-themes";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useCurrentUser } from "@/context/AuthContext";
 import { useUserBillingStatus } from "@/hooks/useUserBillingStatus";
 import { authClient } from "@/server/auth/client";
 import { clientEnv } from "@/env/client";
@@ -50,11 +50,11 @@ export function CommandPalette() {
   const { openUpgradeDialog } = useUpgradeToProDialog();
   const { logout } = useLogout();
 
-  const { user } = useCurrentUser();
+  const user = useCurrentUser();
   const { data: userSession } = authClient.useSession?.() ?? {};
   const { isPro } = useUserBillingStatus({ enabled: !!userSession });
 
-  const isAdmin = user?.isAdmin;
+  const isAdmin = user?.role === "admin";
 
   const resetOnboardingMutation = api.user.resetUserOnboarding.useMutation({
     onSuccess: async () => {

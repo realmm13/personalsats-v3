@@ -3,8 +3,8 @@ import { zStringToBool } from "./utils";
 
 export const authClientSchema = z.object({
   NEXT_PUBLIC_AUTH_ENABLE_EMAIL_PASSWORD_AUTHENTICATION:
-    zStringToBool.default("true"),
-  NEXT_PUBLIC_AUTH_ENABLE_EMAIL_VERIFICATION: zStringToBool.default("true"),
+    zStringToBool.optional().default("true"),
+  NEXT_PUBLIC_AUTH_ENABLE_EMAIL_VERIFICATION: zStringToBool.optional().default("true"),
 });
 
 export const authServerSchema = z.object({

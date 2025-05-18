@@ -6,7 +6,7 @@ import { useSettingsDialog } from "@/hooks/useSettingsDialog";
 import { useDialog } from "@/components/DialogManager";
 import { EditEntityDialog } from "@/components/EditEntityDialog";
 import EditProfileFormWithData from "@/components/forms/EditProfileForm/EditProfileFormWithData";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useCurrentUser } from "@/context/AuthContext";
 import { useUserBillingStatus } from "@/hooks/useUserBillingStatus";
 import { authClient } from "@/server/auth/client";
 import { CustomBadge } from "@/components/CustomBadge";
@@ -30,14 +30,14 @@ export function HeaderUserDropdownMenu({ links }: HeaderUserDropdownMenuProps) {
   const { openSettings } = useSettingsDialog();
   const { openDialog } = useDialog();
   const { openUpgradeDialog } = useUpgradeToProDialog();
-  const { user } = useCurrentUser();
+  const user = useCurrentUser();
   const { data: userSession } = authClient.useSession?.() ?? {};
   const { isPro } = useUserBillingStatus({ enabled: !!userSession });
   const { isImpersonating, impersonatedUserName } = useIsImpersonating();
 
   const userName = user?.name;
   const userEmail = user?.email;
-  const isAdmin = user?.isAdmin;
+  const isAdmin = user?.role === "admin";
 
   const handleEditProfileClick = () => {
     openDialog({

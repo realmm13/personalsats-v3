@@ -14,7 +14,7 @@ import { Settings } from 'lucide-react';
 import { SettingsDialog } from "@/components/SettingsDialog";
 import type { TaxReport } from "@/lib/tax/report";
 import { useRouter } from 'next/navigation';
-import { authClient } from "@/server/auth/client"; // Import the configured auth client
+import { useCurrentUser } from "@/context/AuthContext";
 
 // New component to contain the main logic
 function TaxPageContent() {
@@ -257,12 +257,11 @@ function TaxPageContent() {
 
 export default function TaxPage() {
   // Use session hook from the configured client
-  const { data: session, isPending: isSessionLoading } = authClient.useSession?.() ?? {};
-  const isAuthenticated = !!session?.user; // Check if user exists in session data
+  const user = useCurrentUser();
   const router = useRouter(); // Get router instance
 
   // Show loading spinner while session is being checked
-  if (isSessionLoading) {
+  if (user === null) {
     return (
       <div className="flex justify-center items-center h-screen">
          <Spinner size="lg" />
@@ -271,7 +270,7 @@ export default function TaxPage() {
   }
 
   // If session has loaded and user is not authenticated, handle redirect
-  if (!isAuthenticated) {
+  if (!user) {
     // Use useEffect for client-side redirect
     useEffect(() => {
       // Redirect to signin, including the current path as callbackUrl

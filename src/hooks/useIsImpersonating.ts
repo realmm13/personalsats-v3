@@ -1,11 +1,7 @@
-import { authClient } from "@/server/auth/client";
-
+// Impersonation is not used in production. This file is now a no-op.
 export function useIsImpersonating() {
-  const { data: sessionData } = authClient.useSession?.() ?? {};
-  const isImpersonating = !!sessionData?.session?.impersonatedBy;
-
   return {
-    isImpersonating,
-    impersonatedUserName: isImpersonating ? sessionData?.user?.name : null,
+    isImpersonating: false,
+    impersonatedUserName: null,
   };
 }

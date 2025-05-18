@@ -19,6 +19,7 @@ import { APP_NAME, APP_DESCRIPTION } from "@/config/config";
 import { LevaPanel } from "@/components/dev/LevaPanel";
 import { EncryptionProvider } from "@/context/EncryptionContext";
 import ClientGate from '@/components/ClientGate';
+import { AuthProvider } from "@/context/AuthContext";
 
 export const metadata: Metadata = {
   title: APP_NAME,
@@ -52,23 +53,25 @@ export default async function RootLayout({
       <body className="vertical min-h-screen">
         <NuqsAdapter>
           <TRPCReactProvider>
-            <ThemeWrapper>
-              <MediaQueriesProvider>
-                <EncryptionProvider>
-                  <ClientGate>
-                    <KitzeUIProviders>
-                      <ErrorBoundary FallbackComponent={RootErrorFallback}>
-                        <Suspense fallback={<FullPageSpinner />}>
-                          {children}
-                        </Suspense>
-                      </ErrorBoundary>
-                      <RegisterHotkeys hotkeys={hotkeys} />
-                      <Toaster />
-                    </KitzeUIProviders>
-                  </ClientGate>
-                </EncryptionProvider>
-              </MediaQueriesProvider>
-            </ThemeWrapper>
+            <AuthProvider>
+              <ThemeWrapper>
+                <MediaQueriesProvider>
+                  <EncryptionProvider>
+                    <ClientGate>
+                      <KitzeUIProviders>
+                        <ErrorBoundary FallbackComponent={RootErrorFallback}>
+                          <Suspense fallback={<FullPageSpinner />}>
+                            {children}
+                          </Suspense>
+                        </ErrorBoundary>
+                        <RegisterHotkeys hotkeys={hotkeys} />
+                        <Toaster />
+                      </KitzeUIProviders>
+                    </ClientGate>
+                  </EncryptionProvider>
+                </MediaQueriesProvider>
+              </ThemeWrapper>
+            </AuthProvider>
           </TRPCReactProvider>
         </NuqsAdapter>
         {/* Only render Leva panel in development */}

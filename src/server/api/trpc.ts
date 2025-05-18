@@ -9,7 +9,7 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
-import { auth } from "@/server/auth";
+import { auth, type Session, type AuthUserType } from "@/server/auth";
 import { serverEnv } from "@/env";
 
 import { db } from "@/server/db";
@@ -33,7 +33,7 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
 
   return {
     db,
-    session,
+    session: session as Session,
     ...opts,
   };
 };
@@ -147,7 +147,8 @@ export const protectedProcedure = t.procedure
  *
  */
 export const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
-  if (ctx.session.user.role !== "admin") {
+  const user = ctx.session.user as any;
+  if (user.role !== "admin") {
     throw new TRPCError({
       code: "UNAUTHORIZED",
       message: "User does not have admin privileges",
@@ -156,7 +157,7 @@ export const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
 
   return next({
     ctx: {
-      session: { ...ctx.session, user: ctx.session.user },
+      session: { ...ctx.session, user },
     },
   });
 });

@@ -12,7 +12,12 @@ import { bitcoinEnvSchema } from "./bitcoin";
 export const clientSchema = z
   .object({})
   .merge(githubSchemas.clientSchema)
-  .merge(authSchemas.clientSchema)
+  .merge(
+    authSchemas.clientSchema.pick({
+      NEXT_PUBLIC_AUTH_ENABLE_EMAIL_VERIFICATION: true,
+      NEXT_PUBLIC_AUTH_ENABLE_EMAIL_PASSWORD_AUTHENTICATION: true,
+    }).partial()
+  )
   .merge(redisSchemas.clientSchema)
   .merge(emailSchema.clientSchema)
   .merge(generalSchemas.clientSchema)

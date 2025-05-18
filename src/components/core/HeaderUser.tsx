@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useCurrentUser } from "@/context/AuthContext";
 import { CustomButton } from "@/components/CustomButton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -26,9 +26,8 @@ interface AppHeaderUserProps {
 }
 
 export function AppHeaderUser({ links }: AppHeaderUserProps) {
-  const { user } = useCurrentUser();
-  const { data: userSession, isPending } = authClient.useSession?.() ?? {};
-  const { isPro } = useUserBillingStatus({ enabled: !!userSession });
+  const user = useCurrentUser();
+  const { isPro } = useUserBillingStatus({ enabled: !!user });
   const { isMobile } = useKitzeUI();
   const { isImpersonating, impersonatedUserName } = useIsImpersonating();
   const [isMounted, setIsMounted] = useState(false);
@@ -47,7 +46,7 @@ export function AppHeaderUser({ links }: AppHeaderUserProps) {
     transition: { duration: 0.2 },
   };
 
-  if (!isMounted || isPending) {
+  if (!isMounted) {
     return (
       <motion.div key="loading-placeholder" {...motionProps}>
         <Avatar>
@@ -59,8 +58,8 @@ export function AppHeaderUser({ links }: AppHeaderUserProps) {
     );
   }
 
-  const isLoggedOut = !userSession;
-  const isLoggedIn = !!userSession;
+  const isLoggedOut = !user;
+  const isLoggedIn = !!user;
 
   return (
     <AnimatePresence mode="wait">
@@ -129,7 +128,7 @@ export function AppHeaderUser({ links }: AppHeaderUserProps) {
           <SimpleDropdownMenu
             mobileView="bottom-drawer"
             content={<HeaderUserDropdownMenu links={enabledLinks} />}
-            key={`${user?.profilePic ?? "no-pic"}-${user?.name ?? "no-name"}`}
+            key={`${user?.image ?? "no-pic"}-${user?.name ?? "no-name"}`}
           >
             <div className="relative">
               <SimpleTooltip
@@ -138,10 +137,10 @@ export function AppHeaderUser({ links }: AppHeaderUserProps) {
                 }
               >
                 <Avatar className="cursor-pointer">
-                  {user?.profilePic && (
+                  {user?.image && (
                     <AvatarImage
                       className="object-cover"
-                      src={user.profilePic}
+                      src={user.image}
                       alt="User Avatar"
                     />
                   )}

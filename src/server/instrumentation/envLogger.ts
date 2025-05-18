@@ -41,23 +41,23 @@ export function logEnvConfigStatus() {
   // --- Auth ---
   console.log("\n🔑 Auth");
   logBooleanSetting(
-    serverEnv.NEXT_PUBLIC_AUTH_ENABLE_EMAIL_PASSWORD_AUTHENTICATION,
+    !!serverEnv.NEXT_PUBLIC_AUTH_ENABLE_EMAIL_PASSWORD_AUTHENTICATION,
     "Email/Password auth",
     "|_  ",
   );
   logBooleanSetting(
-    serverEnv.AUTH_AUTO_SIGN_IN_AFTER_VERIFICATION,
+    !!serverEnv.AUTH_AUTO_SIGN_IN_AFTER_VERIFICATION,
     "Auto sign-in after verification",
     "|_  ",
   );
   logBooleanSetting(
-    serverEnv.NEXT_PUBLIC_AUTH_ENABLE_EMAIL_VERIFICATION,
+    !!serverEnv.NEXT_PUBLIC_AUTH_ENABLE_EMAIL_VERIFICATION,
     "Email verification required",
     "|_  ",
   );
   // Note: AUTH_AUTO_SIGN_IN_AFTER_VERIFICATION logged above
   logBooleanSetting(
-    serverEnv.AUTH_ENABLE_CHANGE_EMAIL,
+    !!serverEnv.AUTH_ENABLE_CHANGE_EMAIL,
     "Enable email change",
     "|_  ",
   );

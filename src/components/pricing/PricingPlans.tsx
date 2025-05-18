@@ -10,14 +10,14 @@ import { PlanType, SubscriptionInterval } from "@/config/payment-plans";
 import { useState } from "react";
 import { useKitzeUI } from "@/components/KitzeUIContext";
 import { SimpleSelect } from "@/components/SimpleSelect";
-import { authClient } from "@/server/auth/client";
+import { useCurrentUser } from "@/context/AuthContext";
 import { PlanCard, type PlanCardProps } from "./PlanCard";
 
 export default function PricingPlans() {
   const { isMobile } = useKitzeUI();
   const plans = getActivePaymentPlans();
-  const { data: session } = authClient.useSession?.() ?? {};
-  const isAuthenticated = !!session;
+  const user = useCurrentUser();
+  const isAuthenticated = !!user;
 
   const monthlyPlan = plans.find(
     (plan) =>

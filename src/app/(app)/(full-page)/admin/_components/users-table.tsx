@@ -56,7 +56,7 @@ export default function UsersTable() {
 
   const filteredUsers =
     users?.filter((user) =>
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()),
+      (user as any).email.toLowerCase().includes(searchTerm.toLowerCase()),
     ) || [];
 
   return (
@@ -76,7 +76,6 @@ export default function UsersTable() {
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
-              <TableHead>Username</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Verified</TableHead>
               <TableHead>Status</TableHead>
@@ -89,13 +88,12 @@ export default function UsersTable() {
             {/* Adjusted empty state message */}
             {filteredUsers.length > 0 ? (
               filteredUsers.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>{user.name}</TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>{user.username ?? ""}</TableCell>
+                <TableRow key={(user as any).id}>
+                  <TableCell>{(user as any).name}</TableCell>
+                  <TableCell>{(user as any).email}</TableCell>
                   <TableCell>{user.role ?? "User"}</TableCell>
                   <TableCell>
-                    {user.emailVerified ? (
+                    {(user as any).emailVerified ? (
                       <Badge
                         color="primary"
                         variant="outline"
@@ -137,12 +135,12 @@ export default function UsersTable() {
                     )}
                   </TableCell>
                   <TableCell>
-                    {format(new Date(user.createdAt), "PPP")}
+                    {format(new Date((user as any).createdAt), "PPP")}
                   </TableCell>
                   <TableCell>
                     <div className="h gap-2">
                       <ImpersonateUser
-                        userId={user.id}
+                        userId={(user as any).id}
                         currentUserId={currentUser?.user?.id}
                       />
                     </div>
